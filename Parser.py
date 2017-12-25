@@ -21,7 +21,7 @@ class Parser:
     ]
     Special_Names_one_Operands=[
         "call", "jmp", "neg", "inc", "dec", "loop", "push",
-        "pop", "test", "je", "jz", "jne", "jnz", "ja", "jnbe",
+        "pop", "je", "jz", "jne", "jnz", "ja", "jnbe",
         "jg", "jnle", "jae", "jnb", "jge", "jnl", "jb", "jnae",
         "jl", "jnge", "jbe", "jna", "jle", "jng", "mul", "imul",
         "div", "idiv", "rep", "repe", "repz", "repne", "repnz"
@@ -32,22 +32,27 @@ class Parser:
         "scasb","scasw","scasd","stosb","stosw","stosd",
         "lodsb","lodsw","lodsd","sbb","acd","shl","shr",
         "sal","sar","rol","ror","rcl","rcr","mov","movsx",
-        "movzx","add","sub","xchg","xor","and","or","cmp"
+        "movzx","add","sub","xchg","test","xor","and","or","cmp"
     ]
-    Registers=[
-        "eax","ebx","ecx","edx",
-        "ebp","esp","esi","edi",
-        "eip","ax","bx","cx","dx",
-        "al","ah","bl","bh","ch",
-        "cl","dh","dl"
-    ]
+    Registers={
+        "eax":0,"ecx":0,"edx":0,"ebx":0,
+        "esp":0,"ebp":0,"esi":0,"edi":0,
+        "eip":0,"ax":0,"bx":0,"cx":0,"dx":0,
+        "al":0,"ah":0,"bl":0,"bh":0,"ch":0,
+        "cl":0,"dh":0,"dl":0
+    }
+    Flags={"cf":0,"of":0,"sf":0,"ac":0,"pf":0,"zf":0,"df":0}
     Data_variables={}
     Memory_data_segment=[]
     Code_segment=[]
+    Stack_segment = []
     Functions_names={}
     Labels_names={}
     Opened_function=""
+    Use_Uses=[]
     Data_type_for_comma=0
+    Instructions=0
+
     def __init__(self,Code):
         Code=Code.replace('\t','   ')
         self.Code =Code.lower()
@@ -66,10 +71,15 @@ class Parser:
                     if self.Build_code_segment() == False:
                         print("syntax error")
                         return
+                    else:
+                        if self.Start_Code() == False:
+                            print("syntax error")
+                            return
+                        else:
+                            return True
         else:
             print("syntax error")
             return
-
 
     def Split_to_Lines(self):
         Line = []
@@ -304,12 +314,789 @@ class Parser:
        # print("Memory_data_segment  ",self.Memory_data_segment)
         return True
 
+    def Search_lable(self,address):
+        ret=False
+        for i in self.Labels_names:
+            if self.Labels_names[i]==address:
+                return True
+        return ret
+
+    def Jmp_X(self,String):
+        # "jae", "jnb", "jge", "jnl",  "jbe", "jna", "jle", "jng"
+        if String=="jmp":
+            return True
+        elif (String=="je")|(String=="jz"):
+            if self.Flags["zf"]==1:
+                return True
+            return False
+        elif (String=="jne")|(String=="jnz"):
+            if self.Flags["zf"]==0:
+                return True
+            return False
+        elif (String=="ja")|(String=="jnbe")|(String=="jg")|(String=="jnle"):
+            if self.Flags["sf"]==self.Flags["of"]:
+                return True
+            return False
+        elif (String=="jb")|(String=="jnae")|(String=="jl")|(String=="jnge"):
+            if self.Flags["sf"]!=self.Flags["of"]:
+                return True
+            return False
+        elif (String=="jae")|(String=="jnb")|(String=="jge")|(String=="jnl"):
+            if self.Flags["sf"]==self.Flags["of"]:
+                return True
+            elif self.Flags["zf"]==1:
+                return True
+            return False
+        elif (String=="jbe")|(String=="jna")|(String=="jle")|(String=="jng"):
+            if self.Flags["sf"]!=self.Flags["of"]:
+                return True
+            elif self.Flags["zf"]==1:
+                return True
+            return False
+        elif (String=="loop"):
+            if self.Flags["zf"]==1:
+                return True
+            return False
+
+    def Irvine32(self,String):
+        #"","readchar","readdec","readstring","readint","writechar","writedec","writestring","writeint"
+        if String=="crlf":
+            print("")
+        elif String=="dumpregs":
+            print("Registers ====>",self.Registers)
+            print("Flags ====>", self.Flags)
+        elif String=="writeint":
+            print("eax ====>",self.Registers["eax"])
+
+        return True
+
+
+
+    def Mul_X(self,String,infix):
+        return True
+
+    def Div_X(self,String,infix):
+        return True
+
+    def Push_Pop(self,String,infix):
+        return True
+
+    def Neg_inc_dec(self,String,infix):
+        return True
+
+    def Mov_X(self,String,infix):
+        tmp1=self.Check_code_operand(infix[0])
+        tmp2=self.Check_code_operand(infix[1])
+        if (tmp1==False)|(tmp2==False):
+            return False
+        if (tmp1[0]=='imm')|(tmp1[2]==0)|((tmp1[0]=='imm')&(tmp2[0]=='imm')):
+            return False
+
+        if String=='mov':
+
+            if ((tmp1[0]=='add')&(tmp2[0]=='add'))|((tmp1[2]!=tmp2[2])&(tmp2[2]!=0)&(tmp2[0]!='imm')):
+                return False
+            b = 0
+            if (tmp2[0] != 'var')&(tmp2[0] != 'add'):
+                b = tmp2[1]
+            else:
+                b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+
+            if b < 0:
+                b = pow(2, (tmp1[2]*8)) + b
+            if b < 0:
+                return False
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]]=b
+            else:
+                if self.Save_value_in_memory(tmp1[1],b, tmp1[2])==False:
+                    return False
+        elif String=='movzx':
+
+            if ((tmp1[0]=='add')&(tmp2[0]=='add'))|((tmp1[2]<=tmp2[2])&(tmp2[2]!=0)&(tmp2[0]!='imm')):
+                return False
+            b = 0
+            if (tmp2[0] != 'var') & (tmp2[0] != 'add'):
+                b = tmp2[1]
+            else:
+                b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+            if b < 0:
+                b = pow(2, (tmp1[2]*8)) + b
+            if b < 0:
+                return False
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]]=b
+            else:
+                if self.Save_value_in_memory(tmp1[1],b, tmp1[2])==False:
+                    return False
+
+
+
+
+        return True
+
+    def Cmp(self,String,infix):
+        return True
+
+    def Xchg(self,String,infix):
+        tmp1 = self.Check_code_operand(infix[0])
+        tmp2 = self.Check_code_operand(infix[1])
+        if (tmp1 == False) | (tmp2 == False):
+            return False
+        if (tmp1[0] == 'imm') | (tmp1[2] == 0) | ((tmp1[0] == 'imm') & (tmp2[0] == 'imm')):
+            return False
+        if ((tmp1[0] == 'add') & (tmp2[0] == 'add'))|((tmp1[0] == 'imm') & (tmp2[0] == 'imm')) | ((tmp1[2] != tmp2[2]) & (tmp2[2] != 0)):
+            return False
+
+        a = 0
+        if (tmp1[0] != 'var') & (tmp1[0] != 'add'):
+            a = tmp1[1]
+        else:
+            a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+        b = 0
+        if (tmp2[0] != 'var') & (tmp2[0] != 'add'):
+            b = tmp2[1]
+        else:
+            b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+        if tmp1[0] == 'reg':
+            self.Registers[infix[0][0]] = b
+        else:
+            if self.Save_value_in_memory(tmp1[1], b, tmp1[2]) == False:
+                return False
+
+        if tmp2[0] == 'reg':
+            self.Registers[infix[1][0]] = a
+        else:
+            if self.Save_value_in_memory(tmp2[1], a, tmp2[2]) == False:
+                return False
+        return True
+
+    def Add_sub(self,String,infix):
+
+        tmp1 = self.Check_code_operand(infix[0])
+        tmp2 = self.Check_code_operand(infix[1])
+        if (tmp1 == False) | (tmp2 == False):
+            return False
+        if (tmp1[0] == 'imm') | (tmp1[2] == 0) | ((tmp1[0] == 'imm') & (tmp2[0] == 'imm')):
+            return False
+        if ((tmp1[0] == 'add') & (tmp2[0] == 'add')) | ((tmp1[2] != tmp2[2]) & (tmp2[2] != 0) & (tmp2[0] != 'imm')):
+            return False
+
+        if String=='add':
+
+            a = 0
+            if (tmp1[0] != 'var') & (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+            b = 0
+            if (tmp2[0] != 'var')&(tmp2[0] != 'add'):
+                b = tmp2[1]
+            else:
+                b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+
+            if b < 0:
+                b = pow(2, (tmp1[2]*8)) + b
+            if b < 0:
+                return False
+
+            a=a+b
+            if a>pow(2,tmp1[2]*8):
+                a=int(a/pow(2,tmp1[2]*8))
+            elif a==pow(2,tmp1[2]*8):
+                a=0
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]]=a
+            else:
+                if self.Save_value_in_memory(tmp1[1],a, tmp1[2])==False:
+                    return False
+        elif String=='acd':
+
+            a = 0
+            if (tmp1[0] != 'var') & (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+            b = 0
+            if (tmp2[0] != 'var')&(tmp2[0] != 'add'):
+                b = tmp2[1]
+            else:
+                b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+
+            if b < 0:
+                b = pow(2, (tmp1[2]*8)) + b
+            if b < 0:
+                return False
+
+            a=a+b+self.Flags["cf"]
+
+            if a>pow(2,tmp1[2]*8):
+                a=int(a/pow(2,tmp1[2]*8))
+            elif a==pow(2,tmp1[2]*8):
+                a=0
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]]=a
+            else:
+                if self.Save_value_in_memory(tmp1[1],a, tmp1[2])==False:
+                    return False
+        elif String=='sub':
+            a = 0
+            if (tmp1[0] != 'var') & (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+            b = 0
+            if (tmp2[0] != 'var')&(tmp2[0] != 'add'):
+                b = tmp2[1]
+            else:
+                b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+
+            if b < 0:
+                b = pow(2, (tmp1[2]*8)) + b
+            if b < 0:
+                return False
+
+            b = pow(2, (tmp1[2] * 8)) - b
+            a=a+b
+
+            if a>pow(2,tmp1[2]*8):
+                a=int(a/pow(2,tmp1[2]*8))
+            elif a==pow(2,tmp1[2]*8):
+                a=0
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]]=a
+            else:
+                if self.Save_value_in_memory(tmp1[1],a, tmp1[2])==False:
+                    return False
+        elif String=='sbb':
+            a = 0
+            if (tmp1[0] != 'var') & (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+            b = 0
+            if (tmp2[0] != 'var')&(tmp2[0] != 'add'):
+                b = tmp2[1]
+            else:
+                b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+
+            if b < 0:
+                b = pow(2, (tmp1[2]*8)) + b
+            if b < 0:
+                return False
+
+            b = pow(2, (tmp1[2] * 8)) - b
+            a=a+b+self.Flags["cf"]
+
+            if a>pow(2,tmp1[2]*8):
+                a=int(a/pow(2,tmp1[2]*8))
+            elif a==pow(2,tmp1[2]*8):
+                a=0
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]]=a
+            else:
+                if self.Save_value_in_memory(tmp1[1],a, tmp1[2])==False:
+                    return False
+        return True
+
+    def Shift(self,String,infix):
+        return True
+
+    def Test(self,String,infix):
+        return True
+
+    def Mem_opr(self,String,infix):
+        return True
+
+    def Get_value_from_memory(self,address,type):
+        if (address<self.Memory_data_segment.__len__())&(address+(type)<=self.Memory_data_segment.__len__()):
+
+            ret=""
+            i=address
+            while (i<(address+(type))):
+                ret=self.Memory_data_segment[i]+ret
+                i+=1
+            return int(ret,16)
+        else:
+            return False
+
+    def Save_value_in_memory(self,address,value,type):
+        if (address<self.Memory_data_segment.__len__())&(address+(type)<=self.Memory_data_segment.__len__()):
+
+            tmp = str(hex(value))[2:]
+            if tmp.__len__()  > (type*2):
+                return False
+
+            for j in range(0, (type)):
+                if tmp == "":
+                    self.Memory_data_segment[address+j]="00"
+                elif tmp.__len__() > 1:
+                    self.Memory_data_segment[address+j] =tmp[len(tmp) - 2] + tmp[len(tmp) - 1]
+                    tmp = tmp[:-2]
+                else:
+                    self.Memory_data_segment[address+j] ='0' + tmp[len(tmp) - 1]
+                    tmp = tmp[:-1]
+
+            return True
+        else:
+            return False
+
+#############################
+
+
+    def Check_code_operand(self,Operand):
+        if len(Operand)==1:
+            if self.Data_variables.__contains__(Operand[0])==True:
+                tmp=self.Data_variables[Operand[0]]
+                # name , address , Type
+                return ["var",tmp[0],self.Type(tmp[1])]
+            elif self.Registers.__contains__(Operand[0])==True:
+                reg_32 = ["eax", "ebx", "ecx", "edx", "ebp", "esp", "esi", "edi"]
+                reg_16 = ["ax", "bx", "cx", "dx"]
+                tmp=0
+                if reg_32.__contains__(Operand[0])==True:
+                    tmp=4
+                elif reg_16.__contains__(Operand[0])==True:
+                    tmp=2
+                else:
+                    tmp=1
+                # name , value , Type
+                return ["reg",self.Registers[Operand[0]],tmp]
+            elif self.Data_types.__contains__(Operand[0]) == True:
+                return ["imm", self.Type(Operand[0]),self.Type(Operand[0])]
+            else:
+                try:
+                    tmp = 0
+                    if Operand[0] < pow(2, 8):
+                        tmp = 1
+                    elif Operand[0] < pow(2, 16):
+                        tmp = 2
+                    elif Operand[0] < pow(2, 32):
+                        tmp = 4
+                    else:
+                        return False
+                        # name , Type
+                    return ["imm",Operand[0], tmp]
+                    raise "Error"
+                except Exception:
+                    return False
+        else:
+            name=""
+            type=0
+            if Operand.__len__()>1:
+                if Operand[1] == 'ptr':
+                    name = "add"
+                    if self.Data_types.__contains__(Operand[0]) == True:
+                        type = self.Type(Operand[0])
+                        Operand.append('+')
+                    else:
+                        return False
+                    Operand=Operand[2:]
+                    if Operand.__len__() > 0:
+                        if (Operand[0] == 'ptr_X_') | (Operand[0] == 'ptr_'):
+                            Operand.append('+')
+                            name = "add"
+                            type = 0
+                            Operand = Operand[1:]
+                elif (Operand[0] == 'ptr_X_') | (Operand[0] == 'ptr_'):
+                    Operand.append('+')
+                    name = "add"
+                    type = 0
+                    Operand = Operand[1:]
+                else:
+                    name = "imm"
+            else:
+                name = "imm"
+
+
+
+            stak = []
+            for i in range(0, len(Operand)):
+                if (Operand[i] == '+') | (Operand[i] == '-') | (Operand[i] == '*') | (Operand[i] == '/'):
+                    if stak.__len__() > 1:
+                        tmp1=self.Check_code_operand([stak[stak.__len__()-1]])
+                        tmp2 = self.Check_code_operand([stak[stak.__len__() - 2]])
+                        if (tmp1==False)|(tmp2==False):
+
+                            return False
+                        tmp1_=tmp1[1]
+                        tmp2_= tmp2[1]
+
+                        stak = stak[:-1]
+                        if (Operand[i] == '-'):
+                            stak[stak.__len__()-1]=tmp1_-tmp2_
+                        elif (Operand[i] == '+'):
+                            stak[stak.__len__() - 1] = tmp1_ + tmp2_
+                        elif (Operand[i] == '*'):
+                            stak[stak.__len__() - 1] = tmp1_ * tmp2_
+                        elif (Operand[i] == '/'):
+                            if tmp2_!=0:
+                                stak[stak.__len__() - 1] = tmp1_ / tmp2_
+                            else:
+                                return False
+                    else:
+                        if ((Operand[i] == '+') | (Operand[i] == '-')):
+                            tmp1 = self.Check_code_operand([stak[stak.__len__() - 1]])
+                            if (tmp1 == False):
+                                return False
+                            tmp1_ = tmp1[1]
+                            if (Operand[i] == '-'):
+                                stak[stak.__len__() - 1] = tmp1_ * -1
+                            else:
+                                stak[stak.__len__() - 1] = tmp1_
+                        else:
+                            return False
+                elif (Operand[i] == 'lengthof') | (Operand[i] == 'sizeof') | (Operand[i] == 'type'):
+                    if stak.__len__() > 0:
+                        tmp1 = self.Check_code_operand([stak[stak.__len__() - 1]])
+                        if tmp1==False:
+                            return False
+                        if ((tmp1[0]!="var") & ((Operand[i] == 'lengthof') | (Operand[i] == 'sizeof'))):
+                            return False
+                        elif (tmp1[0]!="var") & (Operand[i] == 'type'):
+                            stak[stak.__len__() - 1] = 0
+                        else:
+
+                            tmp1_ = tmp1[2]
+                            tmp2_=self.Data_variables[stak[stak.__len__() - 1]][2]
+                            stak = stak[:-1]
+                            if Operand[i] == 'lengthof':
+                                stak.append(int(tmp2_ / tmp1_))
+                            elif Operand[i] == 'sizeof':
+                                stak.append(tmp2_)
+                            else:
+                                stak.append(tmp1_)
+                    else:
+                        return False
+                elif (Operand[i] == 'offset'):
+                    if stak.__len__() > 0:
+                        tmp1 = self.Check_code_operand([stak[stak.__len__() - 1]])
+                        if tmp1==False:
+                            return False
+                        stak[stak.__len__() - 1] = tmp1[1]
+                    else:
+                        return False
+                else:
+                    stak.append(Operand[i])
+
+            if stak.__len__()==0:
+                return False
+            value = stak[0]
+            if name=="imm":
+                type_=self.Check_code_operand([value])
+                if type_==False:
+                    return False
+                type=type_[2]
+
+            return [name,value,type]
+
+    def Start_Code(self):
+        if self.Code_Lines[self.Code_Lines.__len__() - 1].__len__()==2:
+            if (self.Code_Lines[self.Code_Lines.__len__() - 1][0] == "end") & (
+            self.Functions_names.__contains__(self.Code_Lines[self.Code_Lines.__len__() - 1][1])):
+                self.Registers.update({"eip":self.Functions_names[self.Code_Lines[self.Code_Lines.__len__() - 1][1]]})
+                self.Registers.update({"eip": self.Registers["eip"] + 1})
+                self.Stack_segment.append(-1)
+                #self.Registers.update({"esp": self.Registers["esp"] + 1})
+                while (self.Registers["eip"]<self.Code_segment.__len__()):
+                    self.Instructions+=1
+                    if self.Registers["eip"]==-1:
+                        return True
+                    #print("_______________",self.Code_segment[self.Registers["eip"]], "_   ", self.Registers["eip"])
+                    if (self.Code_segment[self.Registers["eip"]]=="")&(self.Search_lable(self.Registers["eip"])==False):
+                        return False
+
+
+                   # print("_______________", self.Code_segment[self.Registers["eip"]][0], "_   ",self.Registers["eip"])
+                    if (self.Code_segment[self.Registers["eip"]]==""):
+                        self.Registers.update({"eip": self.Registers["eip"] + 1})
+                        self.Instructions-=1
+                        continue
+                    elif self.Special_Names_no_Operands.__contains__(self.Code_segment[self.Registers["eip"]])==True:
+                        if self.Code_segment[self.Registers["eip"]]=="exit":
+                            return True
+                        elif self.Code_segment[self.Registers["eip"]]=="pushfd":
+                            Flags=""
+                            for i in self.Flags:
+                                Flags+=str(self.Flags[i])
+                            self.Stack_segment.append(Flags)
+                            self.Registers.update({"esp": self.Registers["esp"] + 1})
+                        elif self.Code_segment[self.Registers["eip"]]=="popfd":
+                            if self.Registers["esp"]>=0:
+                                Flags = self.Stack_segment[self.Registers["esp"]]
+                                self.Stack_segment = self.Stack_segment[:-1]
+                                self.Registers.update({"esp": self.Registers["esp"] - 1})
+                                try:
+                                    Flags += 0
+                                    return False
+                                    raise Exception("String")
+                                except Exception:
+                                    j = 0
+                                    for i in self.Flags:
+                                        self.Flags.update({i: Flags[j]})
+                                        j += 1
+                            else:
+                                return False
+                        elif self.Code_segment[self.Registers["eip"]] == "pushad":
+                            for i in self.Registers:
+                                if i.__len__()==3:
+                                    self.Stack_segment.append(self.Registers[i])
+                                    self.Registers.update({"esp": self.Registers["esp"] + 1})
+                        elif self.Code_segment[self.Registers["eip"]] == "popad":
+                            b=20
+                        elif self.Code_segment[self.Registers["eip"]] == "cbw":
+                            b = 20
+                        elif self.Code_segment[self.Registers["eip"]] == "cwd":
+                            b = 20
+                        elif self.Code_segment[self.Registers["eip"]] == "cdq":
+                            b = 20
+                        elif self.Code_segment[self.Registers["eip"]] == "cld":
+                            self.Flags.update({"df": 0})
+                        elif self.Code_segment[self.Registers["eip"]] == "std":
+                            self.Flags.update({"df": 1})
+                        elif self.Code_segment[self.Registers["eip"]] == "stc":
+                            self.Flags.update({"cf": 1})
+                        elif self.Code_segment[self.Registers["eip"]] == "clc":
+                            self.Flags.update({"cf":0})
+                        elif self.Code_segment[self.Registers["eip"]] == "ret":
+                            if self.Use_Uses.__len__()==0:
+                                #print("LLLLLLLLLLLLLLLLLLL")
+                                self.Registers.update({"eip": self.Stack_segment[self.Registers["esp"]]})
+                                self.Stack_segment = self.Stack_segment[:-1]
+                                self.Registers.update({"esp": self.Registers["esp"] - 1})
+                                continue
+                            else:
+                                b=20
+                    elif self.Special_Names_one_Operands.__contains__(self.Code_segment[self.Registers["eip"]][0]) == True:
+
+                        if (self.Code_segment[self.Registers["eip"]][0][0]=='j')|(self.Code_segment[self.Registers["eip"]][0][0]=='l'):
+                            tmp=self.Jmp_X(self.Code_segment[self.Registers["eip"]][0])
+                            if tmp==True:
+                                self.Registers.update({"eip": self.Labels_names[self.Code_segment[self.Registers["eip"]][1]]})
+                                continue
+                        elif (self.Code_segment[self.Registers["eip"]][0]=='mul')|(self.Code_segment[self.Registers["eip"]][0]=='imul'):
+                            if self.Mul_X(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (self.Code_segment[self.Registers["eip"]][0] == 'div') | (self.Code_segment[self.Registers["eip"]][0] == 'idiv'):
+                            if self.Div_X(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (self.Code_segment[self.Registers["eip"]][0][0]=='p'):
+                            if self.Push_Pop(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (self.Code_segment[self.Registers["eip"]][0]=='neg')|(self.Code_segment[self.Registers["eip"]][0]=='inc')|(self.Code_segment[self.Registers["eip"]][0]=='dec'):
+                            if self.Neg_inc_dec(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (self.Code_segment[self.Registers["eip"]][0]=='call'):
+                            if self.Functions_names.__contains__(self.Code_segment[self.Registers["eip"]][1])==True:
+                                self.Stack_segment.append(self.Registers["eip"] + 1)
+                                self.Registers.update({"esp": self.Registers["esp"] + 1})
+                                self.Registers.update({"eip": self.Functions_names[self.Code_segment[self.Registers["eip"]][1]]})
+                            else:
+                                if self.Irvine32(self.Code_segment[self.Registers["eip"]][1])==False:
+                                    return False
+
+
+                    elif self.Special_Names_two_Operands.__contains__(self.Code_segment[self.Registers["eip"]][0]) == True:
+                        L1=["add", "sub","sbb", "acd"]
+                        L2=["test", "xor", "and", "or"]
+                        L3=["scasb", "scasw", "scasd", "stosb", "stosw", "stosd","lodsb", "lodsw", "lodsd"]
+                        L4=["shl", "shr","sal", "sar", "rol", "ror", "rcl", "rcr"]
+                        if (self.Code_segment[self.Registers["eip"]][0][0]=='m'):
+                            if self.Mov_X(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (self.Code_segment[self.Registers["eip"]][0][0]=='c'):
+                            if self.Cmp(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (self.Code_segment[self.Registers["eip"]][0] == 'xchg'):
+                            if self.Xchg(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (L1.__contains__(self.Code_segment[self.Registers["eip"]][0])==True):
+                            if self.Add_sub(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (L2.__contains__(self.Code_segment[self.Registers["eip"]][0]) == True):
+                            if self.Test(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (L3.__contains__(self.Code_segment[self.Registers["eip"]][0])==True):
+                            if self.Mem_opr(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+                        elif (L4.__contains__(self.Code_segment[self.Registers["eip"]][0])==True):
+                            if self.Shift(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1])==False:
+                                return False
+
+                        #print("222222222_", self.Code_segment[self.Registers["eip"]], "_   ", self.Registers["eip"])
+
+                    self.Registers.update({"eip":self.Registers["eip"]+1})
+
+                if (self.Registers["eip"]<0)|(self.Registers["eip"]>self.Code_segment.__len__()):
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+        return True
+######################################
+    def postfix_code_line(self,Line):
+        stak = []
+        expression = []
+        infix = []
+        for i in range(0, len(Line)):
+
+            reg_32 = ["eax", "ebx", "ecx", "edx", "ebp", "esp", "esi", "edi"]
+            reg_16 = ["ax", "bx", "cx", "dx"]
+            if (Line[i] == '(') | (Line[i] == '['):
+               # print("____________",stak,"'''''''''",expression)
+                if (stak.__len__() > 0):
+
+                    if (Line[i] == '[') & ((stak[stak.__len__() - 1] == "lengthof") | (stak[stak.__len__() - 1] == "sizeof") | (stak[stak.__len__() - 1] == "type")|(stak[stak.__len__() - 1] == "offset") ):
+                        return False
+                    if (Line[i] == '(') & ((stak[stak.__len__() - 1] == "lengthof") | (stak[stak.__len__() - 1] == "sizeof")|(stak[stak.__len__() - 1] == "offset") ):
+                        return False
+                if (stak.__len__()==0)&(Line[i]=='(')&(expression.__len__()!=0):
+                        return False
+                if expression.__len__()>0:
+                    if (Line[i] == '[') & ((expression[expression.__len__() - 1]) != "ptr") & ((reg_32.__contains__(expression[expression.__len__() - 1]) == False) & (self.Data_variables.__contains__(expression[expression.__len__() - 1]) == False)):
+                        return False
+                    elif (Line[i] == '[') & ((expression[expression.__len__() - 1]) != "ptr") & ((reg_32.__contains__(expression[expression.__len__() - 1]) == False)):
+                        tmp=expression[expression.__len__() - 1]
+                        expression[expression.__len__() - 1]="ptr_X_"
+                        expression.append(tmp)
+                    elif(Line[i] == '[') & ((expression[expression.__len__() - 1]) == "ptr"):
+                        #continue
+                        1==1
+                    else:
+                        return False
+                else:
+                    if Line[i]=='[':
+                        expression.append("ptr_")
+
+                stak.append(Line[i])
+            elif (Line[i] == ')') | (Line[i] == ']'):
+                if stak.__len__() == 0:
+                    return False
+
+                j = stak.__len__() - 1
+                while (j >= 0):
+                    if (stak[j] == '(') & (Line[i] == ')'):
+                        break
+                    elif (stak[j] == '(') & (Line[i] == ']'):
+                        return False
+                    elif (stak[j] == '[') & (Line[i] == ')'):
+                        return False
+                    elif (stak[j] == '[') & (Line[i] == ']'):
+                        break
+                    expression.append(stak[j])
+                    stak = stak[:-1]
+                    j = j - 1
+                    if j < 0:
+                        break
+
+                stak = stak[:-1]
+            elif Line[i] == ',':
+                if expression.__len__() == 0:
+                    return False
+                if stak.__len__() != 0:
+                    j = stak.__len__() - 1
+                    while (j >= 0):
+                        expression.append(stak[j])
+                        stak = stak[:-1]
+                        j = j - 1
+                if expression.__len__() > 0:
+                    infix.append(expression)
+                expression = []
+            elif Line[i][0].isdecimal() == True:
+                if Line[i][len(Line[i]) - 1] == 'h':
+                    tmp = Extra_functions.is_hexa(Line[i])
+                    if tmp == False:
+                        return False
+                    expression.append(tmp)
+                elif Line[i][len(Line[i]) - 1] == 'o':
+                    tmp = Extra_functions.is_octa(Line[i])
+                    if tmp == False:
+                        return False
+                    expression.append(tmp)
+                elif Line[i][len(Line[i]) - 1] == 'b':
+                    tmp = Extra_functions.is_binary(Line[i])
+                    if tmp == False:
+                        return False
+                    expression.append(tmp)
+                elif Line[i][len(Line[i]) - 1] == 'd':
+                    tmp = int(Line[i][:-1], 10)
+                    expression.append(tmp)
+                elif Line[i].isdecimal() == True:
+                    expression.append(int(Line[i]))
+                else:
+                    return False
+            elif (Line[i] == "lengthof") | (Line[i] == "sizeof") | (Line[i] == "type")|(Line[i] == "offset"):
+                stak.append(Line[i])
+            else:
+                if (Line[i] == '*') | (Line[i] == '-') | (Line[i] == '/') | (Line[i] == '+'):
+                    if stak.__len__() > 0:
+                        j = stak.__len__() - 1
+                        while (j >= 0):
+                            if ((stak[j] == '+') | (stak[j] == '-')) & ((Line[i] == '+') | (Line[i] == '-')):
+                                expression.append(stak[j])
+                                stak = stak[:-1]
+                            elif ((stak[j] == '+') | (stak[j] == '-')) & ((Line[i] == '*') | (Line[i] == '/')):
+                                break
+                            elif ((stak[j] == '*') | (stak[j] == '/')) & ((Line[i] == '*') | (Line[i] == '/')):
+                                expression.append(stak[j])
+                                stak = stak[:-1]
+                            elif ((stak[j] == '*') | (stak[j] == '/')) & ((Line[i] == '+') | (Line[i] == '-')):
+                                expression.append(stak[j])
+                                stak = stak[:-1]
+                            elif ((stak[j] == 'dup') | (stak[j] == 'lengthof') | (stak[j] == 'type') | (
+                                stak[j] == 'sizeof')):
+                                expression.append(stak[j])
+                                stak = stak[:-1]
+                            else:
+                                break
+                            j = j - 1
+
+                    stak.append(Line[i])
+                else:
+                    try:
+                        if ((Line[i][0] == Line[i][len(Line[i]) - 1]) & (Line[i][0] == '"')) | (
+                                    (Line[i][0] == Line[i][len(Line[i]) - 1]) & (Line[i][0] == "\'")):
+                            tmp=Extra_functions.convert_string(Line[i])
+                            expression.append(tmp)
+                            continue
+                        raise Exception("NotString")
+                    except Exception:
+                        expression.append(Line[i])
+        j = stak.__len__() - 1
+        while (j >= 0):
+            if (stak[j] == '(') | (stak[j] == '['):
+                return False
+            expression.append(stak[j])
+            stak = stak[:-1]
+            j = j - 1
+
+        if expression.__len__() > 0:
+            infix.append(expression)
+        return infix
+
     def Build_code_segment(self):
         i = 0
         if (self.Code_Lines[0].__len__() == 1) & (self.Code_Lines[0][0] == ".code"):
             self.Code_Lines.remove(self.Code_Lines[0])
         else:
             return False
+        reg_32 = ["eax", "ebx", "ecx", "edx", "ebp", "esp", "esi", "edi"]
+        reg_16 = ["ax", "bx", "cx", "dx"]
         while (i < self.Code_Lines.__len__() - 1):
 
             if (self.Code_Lines[i].__len__() == 1) & (self.Code_Lines[i][0] == ".code"):
@@ -318,6 +1105,7 @@ class Parser:
                 if (self.Code_Lines[i].__len__()==1)&(self.Special_Names_no_Operands.__contains__(self.Code_Lines[i][0])==True):
                     self.Code_segment.append(self.Code_Lines[i][0])
                 elif self.Code_Lines[i].__len__()>1:
+
                     if self.Code_Lines[i].__len__()==2:
                         if self.Code_Lines[i][1]=='proc':
                             if (self.Opened_function=="")&(self.Check_is_valid(self.Code_Lines[i][0])==True):
@@ -340,10 +1128,26 @@ class Parser:
                         elif self.Special_Names_one_Operands.__contains__(self.Code_Lines[i][0])==True:
                             if (self.Code_Lines[i][0]=='call')&((self.Functions_names.__contains__(self.Code_Lines[i][1])==True)|(self.Irvine32_functions.__contains__(self.Code_Lines[i][1])==True)):
                                 self.Code_segment.append(self.Code_Lines[i])
-                            elif ((self.Code_Lines[i][0][0]=='j')|(self.Code_Lines[i][0][0]=='l')|(self.Code_Lines[i][0][0]=='r'))&(self.Labels_names.__contains__(self.Code_Lines[i][1])==True):
+                            elif ((self.Code_Lines[i][0][0]=='j')|(self.Code_Lines[i][0]=='l')|(self.Code_Lines[i][0][0]=='r'))&(self.Labels_names.__contains__(self.Code_Lines[i][1])==True):
                                self.Code_segment.append(self.Code_Lines[i])
+                            elif ((self.Code_Lines[i][0]!='call')&(self.Code_Lines[i][0][0]!='j')&(self.Code_Lines[i][0][0]!='l')&(self.Code_Lines[i][0][0]!='r')):
+                                infix = self.postfix_code_line(self.Code_Lines[i][1:])
+                               # print("1111111111111111::",infix)
+                                if (infix==False):
+                                    return False
+                                if infix.__len__()>1:
+                                    return False
+                                self.Code_segment.append([self.Code_Lines[i][0],infix])
                             else:
-                                b=20
+                                return False
+                        elif self.Code_Lines[i][0]=='uses':
+                            if self.Opened_function!="":
+                                for j in range(1,len(self.Code_Lines[i])):
+                                    if (reg_32.__contains__(self.Code_Lines[i][j])==False)&(reg_16.__contains__(self.Code_Lines[i][j])==False):
+                                        return False
+                                self.Code_segment.append(self.Code_Lines[i])
+                            else:
+                                return False
                         else:
                             return False
                     else:
@@ -365,11 +1169,33 @@ class Parser:
                             else:
                                 return False
                         elif self.Special_Names_one_Operands.__contains__(self.Code_Lines[i][0])==True:
-                                b=20
+                            L = ["mul", "imul", "div", "idiv", "neg", "inc", "dec"]
+                            if ((self.Code_Lines[i][0][0] == 'p') | (L.__contains__(self.Code_Lines[i][0])==True)):
+                                infix = self.postfix_code_line(self.Code_Lines[i][1:])
+                                # print("1111111111111111::",infix)
+                                if (infix == False):
+                                    return False
+                                if infix.__len__() > 1:
+                                    return False
+                                self.Code_segment.append([self.Code_Lines[i][0], infix])
+                            else:
+                                return False
                         elif self.Special_Names_two_Operands.__contains__(self.Code_Lines[i][0])==True:
-                            b=20
+                            infix = self.postfix_code_line(self.Code_Lines[i][1:])
+                           # print("3333333333333::", infix)
+                            if (infix == False):
+                                return False
+                            if infix.__len__() > 2:
+                                return False
+                            self.Code_segment.append([self.Code_Lines[i][0], infix])
                         elif self.Code_Lines[i][0]=='uses':
-                            b=0
+                            if self.Opened_function!="":
+                                for j in range(1,len(self.Code_Lines[i])):
+                                    if (reg_32.__contains__(self.Code_Lines[i][j])==False)&(reg_16.__contains__(self.Code_Lines[i][j])==False):
+                                        return False
+                                self.Code_segment.append(self.Code_Lines[i])
+                            else:
+                                return False
                         else:
                             return False
                 else:
@@ -512,9 +1338,9 @@ class Parser:
                             for i in range(0, len(infix)):
                                 stak = []
                                 for j in range(0, len(infix[i])):
-                                    if (infix[i][j] == '+') | (infix[i][j] == '-') | (infix[i][j] == '*') | (
-                                        infix[i][j] == '/'):
+                                    if (infix[i][j] == '+') | (infix[i][j] == '-') | (infix[i][j] == '*') | (infix[i][j] == '/'):
                                         if stak.__len__() > 1:
+
                                             tmp = self.Check_is_valid_data(stak[stak.__len__() - 1])
                                             tmp1 = self.Check_is_valid_data(stak[stak.__len__() - 2])
                                             if (tmp == -1) | (tmp1 == -1):
@@ -524,12 +1350,11 @@ class Parser:
                                             elif tmp == -3:
 
                                                 tmp = Extra_functions.convert_string(stak[stak.__len__() - 1])
-
                                             else:
                                                 tmp = tmp[0]
 
                                             if tmp1 == -2:
-                                                tmp1 = stak[stak.__len__() - 1]
+                                                tmp1 = stak[stak.__len__() - 2]
                                             elif tmp1 == -3:
 
                                                 tmp1 = Extra_functions.convert_string(stak[stak.__len__() - 1])
@@ -572,8 +1397,7 @@ class Parser:
                                     elif (infix[i][j] == 'dup'):
                                         a = 20
                                         ########
-                                    elif (infix[i][j] == 'lengthof') | (infix[i][j] == 'sizeof') | (
-                                        infix[i][j] == 'type'):
+                                    elif (infix[i][j] == 'lengthof') | (infix[i][j] == 'sizeof') | (infix[i][j] == 'type'):
                                         if stak.__len__() > 0:
                                             tmp = self.Check_is_valid_data(stak[stak.__len__() - 1])
                                             if (((tmp == 0) | (tmp == -1) | (tmp == -2) | (tmp == -3)) & (

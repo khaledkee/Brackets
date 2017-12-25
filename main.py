@@ -1,47 +1,41 @@
 import Parser
 import Extra_functions
 Code ="""
-
 include irvine32.inc
-
-B equ ret
-
 .data
-a byte 12
-Va dword  ? ,203,65
- dword "50h"
-
-
-
+a dword 20+2,2,3,4,5
 .code
-F proc uses ghf hfghf fhghf
-
-B
+F proc 
+stc
+std
+call dumpregs 
+call writeint
+call crlf
+ret
 F endp
-main proc
-L1:
-L3: ret
-mov eax,  va
-jmp L1
-call writedec
 
+ main proc
+
+mul 20 30
+xchg dword ptr [a+1] ,a
+
+call F
 exit
 main endp
-
-
 END main
-
 """
 
 
 P=Parser.Parser(Code)
 P.Start()
-#print(P.Data_variables)
-#print(P.Memory_data_segment)
-print(P.Code_segment)
-print(P.Labels_names)
-print(P.Functions_names)
-print(P.Code_Lines)
+print("Data_variables",P.Data_variables)
+print("Memory_data_segment",P.Memory_data_segment)
+print("Labels_names",P.Labels_names)
+print("Functions_names",P.Functions_names)
+print("Instructions",P.Instructions)
+print("Code_segment",P.Code_segment)
+
+#print(P.Code_Lines)
 
 
 

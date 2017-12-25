@@ -46,6 +46,8 @@ def postfix(Line):
             if (stak.__len__()>0):
                 if (Line[i]=='(')&((stak[stak.__len__()-1]=="lengthof")|(stak[stak.__len__()-1]=="sizeof")):
                     return False
+            if (stak.__len__() == 0) & (Line[i] == '('):
+                return False
             stak.append(Line[i])
         elif (Line[i]==')')|(Line[i]==']'):
             if stak.__len__()==0:
