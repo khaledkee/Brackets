@@ -52,10 +52,15 @@ class Parser:
     Use_Uses=[]
     Data_type_for_comma=0
     Instructions=0
+    Max_Memory=0
+    Max_Instructions=0
+    State=""
 
-    def __init__(self,Code):
+    def __init__(self,Code,Max_Instructions,Max_Memory):
         Code=Code.replace('\t','   ')
         self.Code =Code.lower()
+        self.Max_Instructions=Max_Instructions
+        self.Max_Memory=Max_Memory
 
     def Start(self):
         if self.Split_to_Lines()!=False:
@@ -63,23 +68,30 @@ class Parser:
                 print("syntax error")
                 return
             else:
-                X = 0
                 if self.Build_Memory()==False:
+                    if self.State!="":
+                        return self.State
                     print("syntax error")
                     return
                 else:
                     if self.Build_code_segment() == False:
+                        if self.State != "":
+                            return self.State
                         print("syntax error")
                         return
                     else:
                         if self.Start_Code() == False:
+                            if self.State != "":
+                                return self.State
                             print("syntax error")
                             return
                         else:
                             return True
         else:
             print("syntax error")
-            return
+            return False
+
+        return True
 
     def Split_to_Lines(self):
         Line = []
@@ -274,6 +286,9 @@ class Parser:
 
     def Save_in_Memory(self,Type,tmp_memory):
         for i in range(0,len(tmp_memory)):
+            if self.Max_Memory<self.Memory_data_segment.__len__():
+                self.State="ML"
+                return False
             try:
                 tmp_memory[i][0] += 0
                 if tmp_memory[i][0]<0:
@@ -322,7 +337,8 @@ class Parser:
         return ret
 
     def Jmp_X(self,String):
-        # "jae", "jnb", "jge", "jnl",  "jbe", "jna", "jle", "jng"
+
+
         if String=="jmp":
             return True
         elif (String=="je")|(String=="jz"):
@@ -354,9 +370,10 @@ class Parser:
                 return True
             return False
         elif (String=="loop"):
+            self.Neg_inc_dec('dec',[['ecx']])
             if self.Flags["zf"]==1:
-                return True
-            return False
+                return False
+            return True
 
     def Irvine32(self,String):
         #"","readchar","readdec","readstring","readint","writechar","writedec","writestring","writeint"
@@ -367,6 +384,27 @@ class Parser:
             print("Flags ====>", self.Flags)
         elif String=="writeint":
             print("eax ====>",self.Registers["eax"])
+        elif String == "writedec":
+
+            if bool(self.Registers["eax"] &pow(2, (4 * 8)-1))==True:
+                a=self.Registers["eax"]
+                a = pow(2, (4 * 8)) -a
+                print("eax ====>-", a)
+            else:
+                print("eax ====> +", self.Registers["eax"])
+        elif String == "writechar":
+            print(chr(self.Registers["al"]))
+
+        elif String=="writestring":
+
+            c=self.Get_value_from_memory(self.Registers["edx"],1)
+            s=""
+            i=0
+            while (c!=0):
+                s+=chr(c)
+                i+=1
+                c = self.Get_value_from_memory(self.Registers["edx"]+i, 1)
+            print(s)
 
         return True
 
@@ -382,6 +420,139 @@ class Parser:
         return True
 
     def Neg_inc_dec(self,String,infix):
+        tmp1 = self.Check_code_operand(infix[0])
+        if (tmp1 == False):
+            return False
+        if (tmp1[0] == 'imm') | (tmp1[2] == 0):
+            return False
+
+        if String == 'inc':
+
+            a = 0
+            if  (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+
+
+            # self.Flags["ac"] = (a & (pow(2,4 )-1))+(b & (pow(2,4 )-1))
+            a = a + 1
+            if a>=pow(2,tmp1[2]*8):
+                a=a&(pow(2,tmp1[2]*8)-1)
+
+            if bool(a &pow(2, (tmp1[2] * 8)-1))==True:
+                self.Flags["sf"]=1
+            else:
+                self.Flags["sf"] = 0
+
+            v = a
+            one = 0
+            for i in range(0, 8):
+                if bool(v & 1) == True:
+                    one += 1
+                v = v.__rshift__(1)
+            if bool(one & 1) == True:
+                self.Flags["pf"] = 0
+            else:
+                self.Flags["pf"] = 1
+
+            if a==0:
+                self.Flags["zf"] = 1
+            else:
+                self.Flags["zf"] = 0
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]] = a
+            else:
+                if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                    return False
+        elif String == 'neg':
+
+            a = 0
+            if (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+
+            a = pow(2, (tmp1[2] * 8)) + a
+
+            if a>=pow(2,tmp1[2]*8):
+                a=a&(pow(2,tmp1[2]*8)-1)
+                self.Flags["of"] = 1
+            else:
+                self.Flags["of"] = 0
+
+            self.Flags["cf"]=1
+
+            if bool(a &pow(2, (tmp1[2] * 8)-1))==True:
+                self.Flags["sf"]=1
+            else:
+                self.Flags["sf"] = 0
+
+
+            v = a
+            one = 0
+            for i in range(0, 8):
+                if bool(v & 1) == True:
+                    one += 1
+                v = v.__rshift__(1)
+            if bool(one & 1) == True:
+                self.Flags["pf"] = 0
+            else:
+                self.Flags["pf"] = 1
+
+
+            if a==0:
+                self.Flags["zf"] = 1
+            else:
+                self.Flags["zf"] = 0
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]] = a
+            else:
+                if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                    return False
+        elif String == 'dec':
+            a = 0
+            if (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+
+            b = pow(2, (tmp1[2]*8)) -1
+
+
+            a = a +b
+
+            if a>=pow(2,tmp1[2]*8):
+                a=a&(pow(2,tmp1[2]*8)-1)
+
+            if bool(a &pow(2, (tmp1[2] * 8)-1))==True:
+                self.Flags["sf"]=1
+            else:
+                self.Flags["sf"] = 0
+
+            v = a
+            one = 0
+            for i in range(0, 8):
+                if bool(v & 1) == True:
+                    one += 1
+                v = v.__rshift__(1)
+            if bool(one & 1) == True:
+                self.Flags["pf"] = 0
+            else:
+                self.Flags["pf"] = 1
+
+            if a==0:
+                self.Flags["zf"] = 1
+            else:
+                self.Flags["zf"] = 0
+
+            if tmp1[0] == 'reg':
+                self.Registers[infix[0][0]] = a
+            else:
+                if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                    return False
         return True
 
     def Mov_X(self,String,infix):
@@ -397,7 +568,7 @@ class Parser:
             if ((tmp1[0]=='add')&(tmp2[0]=='add'))|((tmp1[2]!=tmp2[2])&(tmp2[2]!=0)&(tmp2[0]!='imm')):
                 return False
             b = 0
-            if (tmp2[0] != 'var')&(tmp2[0] != 'add'):
+            if (tmp2[0] != 'add'):
                 b = tmp2[1]
             else:
                 b = self.Get_value_from_memory(tmp2[1], tmp2[2])
@@ -418,7 +589,7 @@ class Parser:
             if ((tmp1[0]=='add')&(tmp2[0]=='add'))|((tmp1[2]<=tmp2[2])&(tmp2[2]!=0)&(tmp2[0]!='imm')):
                 return False
             b = 0
-            if (tmp2[0] != 'var') & (tmp2[0] != 'add'):
+            if  (tmp2[0] != 'add'):
                 b = tmp2[1]
             else:
                 b = self.Get_value_from_memory(tmp2[1], tmp2[2])
@@ -433,6 +604,35 @@ class Parser:
             else:
                 if self.Save_value_in_memory(tmp1[1],b, tmp1[2])==False:
                     return False
+        elif String=='movsx':
+            if ((tmp1[0]=='add')&(tmp2[0]=='add'))|((tmp1[2]<=tmp2[2])&(tmp2[2]!=0)&(tmp2[0]!='imm')):
+                return False
+            b = 0
+            if  (tmp2[0] != 'add'):
+                b = tmp2[1]
+            else:
+                b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+            if b < 0:
+                b = pow(2, (tmp1[2]*8)) + b
+            if b < 0:
+                return False
+
+            if (b&pow(2,(tmp2[2]*8)-1))==False:
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = b
+                else:
+                    if self.Save_value_in_memory(tmp1[1], b, tmp1[2]) == False:
+                        return False
+            else:
+                v=(pow(2,((tmp1[2]-tmp2[2])*8))-1)*pow(2,(tmp2[2]*8))
+                b=v|b
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = b
+                else:
+                    if self.Save_value_in_memory(tmp1[1], b, tmp1[2]) == False:
+                        return False
+
 
 
 
@@ -440,6 +640,78 @@ class Parser:
         return True
 
     def Cmp(self,String,infix):
+        tmp1 = self.Check_code_operand(infix[0])
+        tmp2 = self.Check_code_operand(infix[1])
+        if (tmp1 == False) | (tmp2 == False):
+            return False
+        if (tmp1[0] == 'imm') | (tmp1[2] == 0) | ((tmp1[0] == 'imm') & (tmp2[0] == 'imm')):
+            return False
+        if ((tmp1[0] == 'add') & (tmp2[0] == 'add')) | ((tmp1[2] != tmp2[2]) & (tmp2[2] != 0) & (tmp2[0] != 'imm')):
+            return False
+        a = 0
+        if (tmp1[0] != 'var') & (tmp1[0] != 'add'):
+            a = tmp1[1]
+        else:
+            a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+        b = 0
+        if (tmp2[0] != 'var') & (tmp2[0] != 'add'):
+            b = tmp2[1]
+        else:
+            b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+        if b < 0:
+            b = pow(2, (tmp1[2] * 8)) + b
+        if b < 0:
+            return False
+
+        b = pow(2, (tmp1[2] * 8)) - b
+
+        v = bool((a & (pow(2, 4) - 1)) + (b & (pow(2, 4) - 1)))
+        if v == True:
+            self.Flags["ac"] = 0
+        else:
+            self.Flags["ac"] = 1
+
+        v = bool((a & (pow(2, (tmp1[2] * 8) - 2) - 1)) + (b & (pow(2, (tmp1[2] * 8) - 2) - 1)))
+
+        a = a + b
+
+        if a >= pow(2, tmp1[2] * 8):
+            a = a & (pow(2, tmp1[2] * 8) - 1)
+            self.Flags["cf"] = 0
+            if v == True:
+                self.Flags["of"] = 1
+            else:
+                self.Flags["of"] = 0
+        else:
+            self.Flags["cf"] = 1
+            if v == True:
+                self.Flags["of"] = 0
+            else:
+                self.Flags["of"] = 1
+
+        if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+            self.Flags["sf"] = 1
+        else:
+            self.Flags["sf"] = 0
+
+        v = a
+        one = 0
+        for i in range(0, 8):
+            if bool(v & 1) == True:
+                one += 1
+            v = v.__rshift__(1)
+        if bool(one & 1) == True:
+            self.Flags["pf"] = 0
+        else:
+            self.Flags["pf"] = 1
+
+        if a == 0:
+            self.Flags["zf"] = 1
+        else:
+            self.Flags["zf"] = 0
+
+
         return True
 
     def Xchg(self,String,infix):
@@ -506,11 +778,53 @@ class Parser:
             if b < 0:
                 return False
 
+            v=bool((a & (pow(2,4 )-1))+(b & (pow(2,4 )-1)))
+            if v==True:
+                self.Flags["ac"]=1
+            else:
+                self.Flags["ac"] = 0
+
+            v = bool((a & (pow(2, (tmp1[2]*8)-2) - 1)) + (b & (pow(2, (tmp1[2]*8)-2) - 1)))
+
+
+
             a=a+b
-            if a>pow(2,tmp1[2]*8):
-                a=int(a/pow(2,tmp1[2]*8))
-            elif a==pow(2,tmp1[2]*8):
-                a=0
+
+            if a>=pow(2,tmp1[2]*8):
+                a=a&(pow(2,tmp1[2]*8)-1)
+                self.Flags["cf"] = 1
+                if v==True:
+                    self.Flags["of"]=0
+                else:
+                    self.Flags["of"] = 1
+            else:
+                self.Flags["cf"] = 0
+                if v==True:
+                    self.Flags["of"]=1
+                else:
+                    self.Flags["of"] = 0
+
+            if bool(a &pow(2, (tmp1[2] * 8)-1))==True:
+                self.Flags["sf"]=1
+            else:
+                self.Flags["sf"] = 0
+
+            v=a
+            one=0
+            for i in range(0,8):
+                if bool(v&1)==True:
+                    one+=1
+                v=v.__rshift__(1)
+            if bool(one&1)==True:
+                self.Flags["pf"]=0
+            else:
+                self.Flags["pf"] = 1
+
+            if a==0:
+                self.Flags["zf"] = 1
+            else:
+                self.Flags["zf"] = 0
+
 
             if tmp1[0] == 'reg':
                 self.Registers[infix[0][0]]=a
@@ -536,12 +850,53 @@ class Parser:
             if b < 0:
                 return False
 
+            v = bool((a & (pow(2, 4) - 1)) + (b & (pow(2, 4) - 1))+self.Flags["cf"])
+            if v==True:
+                self.Flags["ac"]=1
+            else:
+                self.Flags["ac"] = 0
+
+            v = bool((a & (pow(2, (tmp1[2]*8)-2) - 1)) + (b & (pow(2, (tmp1[2]*8)-2) - 1))+self.Flags["cf"])
+
+
+
+
             a=a+b+self.Flags["cf"]
 
-            if a>pow(2,tmp1[2]*8):
-                a=int(a/pow(2,tmp1[2]*8))
-            elif a==pow(2,tmp1[2]*8):
-                a=0
+            if a>=pow(2,tmp1[2]*8):
+                a=a&(pow(2,tmp1[2]*8)-1)
+                self.Flags["cf"] = 1
+                if v == True:
+                    self.Flags["of"] = 0
+                else:
+                    self.Flags["of"] = 1
+            else:
+                self.Flags["cf"] = 0
+                if v == True:
+                    self.Flags["of"] = 1
+                else:
+                    self.Flags["of"] = 0
+
+            if bool(a &pow(2, (tmp1[2] * 8)-1))==True:
+                self.Flags["sf"]=1
+            else:
+                self.Flags["sf"] = 0
+
+            v = a
+            one = 0
+            for i in range(0, 8):
+                if bool(v & 1) == True:
+                    one += 1
+                v = v.__rshift__(1)
+            if bool(one & 1) == True:
+                self.Flags["pf"] = 0
+            else:
+                self.Flags["pf"] = 1
+
+            if a==0:
+                self.Flags["zf"] = 1
+            else:
+                self.Flags["zf"] = 0
 
             if tmp1[0] == 'reg':
                 self.Registers[infix[0][0]]=a
@@ -567,12 +922,55 @@ class Parser:
                 return False
 
             b = pow(2, (tmp1[2] * 8)) - b
+
+            v = bool((a & (pow(2, 4) - 1)) + (b & (pow(2, 4) - 1)))
+            if v == True:
+                self.Flags["ac"] = 0
+            else:
+                self.Flags["ac"] = 1
+
+
+            v = bool((a & (pow(2, (tmp1[2]*8)-2) - 1)) + (b & (pow(2, (tmp1[2]*8)-2) - 1)))
+
+
+
             a=a+b
 
-            if a>pow(2,tmp1[2]*8):
-                a=int(a/pow(2,tmp1[2]*8))
-            elif a==pow(2,tmp1[2]*8):
-                a=0
+            if a>=pow(2,tmp1[2]*8):
+                a=a&(pow(2,tmp1[2]*8)-1)
+                self.Flags["cf"] = 0
+                if v == True:
+                    self.Flags["of"] = 1
+                else:
+                    self.Flags["of"] = 0
+            else:
+                self.Flags["cf"] = 1
+                if v == True:
+                    self.Flags["of"] = 0
+                else:
+                    self.Flags["of"] = 1
+
+            if bool(a &pow(2, (tmp1[2] * 8)-1))==True:
+                self.Flags["sf"]=1
+            else:
+                self.Flags["sf"] = 0
+
+            v = a
+            one = 0
+            for i in range(0, 8):
+                if bool(v & 1) == True:
+                    one += 1
+                v = v.__rshift__(1)
+            if bool(one & 1) == True:
+                self.Flags["pf"] = 0
+            else:
+                self.Flags["pf"] = 1
+
+
+            if a==0:
+                self.Flags["zf"] = 1
+            else:
+                self.Flags["zf"] = 0
 
             if tmp1[0] == 'reg':
                 self.Registers[infix[0][0]]=a
@@ -598,12 +996,53 @@ class Parser:
                 return False
 
             b = pow(2, (tmp1[2] * 8)) - b
+
+            v = bool((a & (pow(2, 4) - 1)) + (b & (pow(2, 4) - 1))+self.Flags["cf"])
+            if v == True:
+                self.Flags["ac"] = 0
+            else:
+                self.Flags["ac"] = 1
+
+            v = bool((a & (pow(2, (tmp1[2] * 8) - 2) - 1)) + (b & (pow(2, (tmp1[2] * 8) - 2) - 1))+self.Flags["cf"])
+
+
             a=a+b+self.Flags["cf"]
 
-            if a>pow(2,tmp1[2]*8):
-                a=int(a/pow(2,tmp1[2]*8))
-            elif a==pow(2,tmp1[2]*8):
-                a=0
+            if a>=pow(2,tmp1[2]*8):
+                a=a&(pow(2,tmp1[2]*8)-1)
+                self.Flags["cf"] = 0
+                if v == True:
+                    self.Flags["of"] = 1
+                else:
+                    self.Flags["of"] = 0
+            else:
+                self.Flags["cf"] = 1
+                if v == True:
+                    self.Flags["of"] = 0
+                else:
+                    self.Flags["of"] = 1
+
+            if bool(a &pow(2, (tmp1[2] * 8)-1))==True:
+                self.Flags["sf"]=1
+            else:
+                self.Flags["sf"] = 0
+
+
+            v = a
+            one = 0
+            for i in range(0, 8):
+                if bool(v & 1) == True:
+                    one += 1
+                v = v.__rshift__(1)
+            if bool(one & 1) == True:
+                self.Flags["pf"] = 0
+            else:
+                self.Flags["pf"] = 1
+
+            if a==0:
+                self.Flags["zf"] = 1
+            else:
+                self.Flags["zf"] = 0
 
             if tmp1[0] == 'reg':
                 self.Registers[infix[0][0]]=a
@@ -613,6 +1052,401 @@ class Parser:
         return True
 
     def Shift(self,String,infix):
+        tmp1 = self.Check_code_operand(infix[0])
+        tmp2 = self.Check_code_operand(infix[1])
+        if (tmp1 == False) | (tmp2 == False):
+            return False
+        if ((tmp1[0] == 'reg')|(tmp1[0] == 'var')|((tmp1[0] == 'add')&(tmp1[2] != 0))) & ((((tmp2[0] == 'imm')&(tmp2[2] == 1)))|((tmp2[0] == 'reg')&(infix[1][0]=='cl'))):
+           # "", "","", "", "rol", "ror", "rcl", "rcr"
+            if (String=='shl')|(String=='sal'):
+                a = 0
+                if  (tmp1[0] != 'add'):
+                    a = tmp1[1]
+                else:
+                    a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+                b = 0
+                if (tmp2[0] != 'add'):
+                    b = tmp2[1]
+                else:
+                    b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+                if b < 0:
+                    b = pow(2, (tmp1[2] * 8)) + b
+                if b < 0:
+                    return False
+
+
+                for i in range(0,b):
+                    a = a * 2
+                    if a >= pow(2, tmp1[2] * 8):
+                        a = a & (pow(2, tmp1[2] * 8) - 1)
+                        self.Flags["cf"] = 1
+                    else:
+                        self.Flags["cf"] = 0
+
+
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                v = a
+                one = 0
+                for i in range(0, 8):
+                    if bool(v & 1) == True:
+                        one += 1
+                    v = v.__rshift__(1)
+                if bool(one & 1) == True:
+                    self.Flags["pf"] = 0
+                else:
+                    self.Flags["pf"] = 1
+
+                if a == 0:
+                    self.Flags["zf"] = 1
+                else:
+                    self.Flags["zf"] = 0
+
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = a
+                else:
+                    if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                        return False
+            elif  String=='shr':
+                a = 0
+                if (tmp1[0] != 'add'):
+                    a = tmp1[1]
+                else:
+                    a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+                b = 0
+                if  (tmp2[0] != 'add'):
+                    b = tmp2[1]
+                else:
+                    b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+                if b < 0:
+                    b = pow(2, (tmp1[2] * 8)) + b
+                if b < 0:
+                    return False
+
+
+                for i in range(0,b):
+                    if bool(a&1)==True:
+                        self.Flags["cf"] = 1
+                    else:
+                        self.Flags["cf"] = 0
+                    a = int(a / 2)
+
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                v = a
+                one = 0
+                for i in range(0, 8):
+                    if bool(v & 1) == True:
+                        one += 1
+                    v = v.__rshift__(1)
+                if bool(one & 1) == True:
+                    self.Flags["pf"] = 0
+                else:
+                    self.Flags["pf"] = 1
+
+                if a == 0:
+                    self.Flags["zf"] = 1
+                else:
+                    self.Flags["zf"] = 0
+
+
+
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = a
+                else:
+                    if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                        return False
+            elif String == 'sar':
+                a = 0
+                if  (tmp1[0] != 'add'):
+                    a = tmp1[1]
+                else:
+                    a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+                b = 0
+                if  (tmp2[0] != 'add'):
+                    b = tmp2[1]
+                else:
+                    b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+                if b < 0:
+                    b = pow(2, (tmp1[2] * 8)) + b
+                if b < 0:
+                    return False
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                for i in range(0, b):
+                    if bool(a & 1) == True:
+                        self.Flags["cf"] = 1
+                    else:
+                        self.Flags["cf"] = 0
+                    a = int(a / 2)
+                    if self.Flags["sf"]==1:
+                        a=a|pow(2, (tmp1[2] * 8) - 1)
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                v = a
+                one = 0
+                for i in range(0, 8):
+                    if bool(v & 1) == True:
+                        one += 1
+                    v = v.__rshift__(1)
+                if bool(one & 1) == True:
+                    self.Flags["pf"] = 0
+                else:
+                    self.Flags["pf"] = 1
+
+                if a == 0:
+                    self.Flags["zf"] = 1
+                else:
+                    self.Flags["zf"] = 0
+
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = a
+                else:
+                    if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                        return False
+            elif String=='rol':
+                a = 0
+                if  (tmp1[0] != 'add'):
+                    a = tmp1[1]
+                else:
+                    a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+                b = 0
+                if (tmp2[0] != 'add'):
+                    b = tmp2[1]
+                else:
+                    b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+                if b < 0:
+                    b = pow(2, (tmp1[2] * 8)) + b
+                if b < 0:
+                    return False
+
+
+                for i in range(0,b):
+                    a = a * 2
+
+                    if a >= pow(2, tmp1[2] * 8):
+                        a = a & (pow(2, tmp1[2] * 8) - 1)
+                        self.Flags["cf"] = 1
+                        a = a | 1
+                    else:
+                        self.Flags["cf"] = 0
+
+
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                v = a
+                one = 0
+                for i in range(0, 8):
+                    if bool(v & 1) == True:
+                        one += 1
+                    v = v.__rshift__(1)
+                if bool(one & 1) == True:
+                    self.Flags["pf"] = 0
+                else:
+                    self.Flags["pf"] = 1
+
+                if a == 0:
+                    self.Flags["zf"] = 1
+                else:
+                    self.Flags["zf"] = 0
+
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = a
+                else:
+                    if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                        return False
+            elif String == 'ror':
+                a = 0
+                if (tmp1[0] != 'add'):
+                    a = tmp1[1]
+                else:
+                    a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+                b = 0
+                if (tmp2[0] != 'add'):
+                    b = tmp2[1]
+                else:
+                    b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+                if b < 0:
+                    b = pow(2, (tmp1[2] * 8)) + b
+                if b < 0:
+                    return False
+
+                for i in range(0, b):
+                    if bool(a & 1) == True:
+                        self.Flags["cf"] = 1
+                    else:
+                        self.Flags["cf"] = 0
+                    a = int(a / 2)
+                    if self.Flags["cf"]==1:
+                        a=a|pow(2, (tmp1[2] * 8) - 1)
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                v = a
+                one = 0
+                for i in range(0, 8):
+                    if bool(v & 1) == True:
+                        one += 1
+                    v = v.__rshift__(1)
+                if bool(one & 1) == True:
+                    self.Flags["pf"] = 0
+                else:
+                    self.Flags["pf"] = 1
+
+                if a == 0:
+                    self.Flags["zf"] = 1
+                else:
+                    self.Flags["zf"] = 0
+
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = a
+                else:
+                    if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                        return False
+            elif String == 'rcl':
+                a = 0
+                if (tmp1[0] != 'add'):
+                    a = tmp1[1]
+                else:
+                    a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+                b = 0
+                if (tmp2[0] != 'add'):
+                    b = tmp2[1]
+                else:
+                    b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+                if b < 0:
+                    b = pow(2, (tmp1[2] * 8)) + b
+                if b < 0:
+                    return False
+
+                for i in range(0, b):
+                    a = a * 2
+
+                    if a >= pow(2, tmp1[2] * 8):
+                        a = a & (pow(2, tmp1[2] * 8) - 1)
+                        if self.Flags["cf"] == 1:
+                            a=a|1
+                        self.Flags["cf"] = 1
+
+                    else:
+                        if self.Flags["cf"] == 1:
+                            a=a|1
+                        self.Flags["cf"] = 0
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                v = a
+                one = 0
+                for i in range(0, 8):
+                    if bool(v & 1) == True:
+                        one += 1
+                    v = v.__rshift__(1)
+                if bool(one & 1) == True:
+                    self.Flags["pf"] = 0
+                else:
+                    self.Flags["pf"] = 1
+
+                if a == 0:
+                    self.Flags["zf"] = 1
+                else:
+                    self.Flags["zf"] = 0
+
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = a
+                else:
+                    if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                        return False
+            elif String == 'rcr':
+                a = 0
+                if (tmp1[0] != 'add'):
+                    a = tmp1[1]
+                else:
+                    a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+                b = 0
+                if (tmp2[0] != 'add'):
+                    b = tmp2[1]
+                else:
+                    b = self.Get_value_from_memory(tmp2[1], tmp2[2])
+
+                if b < 0:
+                    b = pow(2, (tmp1[2] * 8)) + b
+                if b < 0:
+                    return False
+
+                for i in range(0, b):
+                    f=self.Flags["cf"]
+                    if bool(a & 1) == True:
+                        self.Flags["cf"] = 1
+                    else:
+                        self.Flags["cf"] = 0
+                    a = int(a / 2)
+                    if f == 1:
+                        a = a | pow(2, (tmp1[2] * 8) - 1)
+
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)) == True:
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                v = a
+                one = 0
+                for i in range(0, 8):
+                    if bool(v & 1) == True:
+                        one += 1
+                    v = v.__rshift__(1)
+                if bool(one & 1) == True:
+                    self.Flags["pf"] = 0
+                else:
+                    self.Flags["pf"] = 1
+
+                if a == 0:
+                    self.Flags["zf"] = 1
+                else:
+                    self.Flags["zf"] = 0
+
+                if tmp1[0] == 'reg':
+                    self.Registers[infix[0][0]] = a
+                else:
+                    if self.Save_value_in_memory(tmp1[1], a, tmp1[2]) == False:
+                        return False
+
+
+
+        else:
+            return False
+
         return True
 
     def Test(self,String,infix):
@@ -662,7 +1496,7 @@ class Parser:
             if self.Data_variables.__contains__(Operand[0])==True:
                 tmp=self.Data_variables[Operand[0]]
                 # name , address , Type
-                return ["var",tmp[0],self.Type(tmp[1])]
+                return ["add",tmp[0],self.Type(tmp[1])]
             elif self.Registers.__contains__(Operand[0])==True:
                 reg_32 = ["eax", "ebx", "ecx", "edx", "ebp", "esp", "esi", "edi"]
                 reg_16 = ["ax", "bx", "cx", "dx"]
@@ -812,6 +1646,12 @@ class Parser:
                 self.Stack_segment.append(-1)
                 #self.Registers.update({"esp": self.Registers["esp"] + 1})
                 while (self.Registers["eip"]<self.Code_segment.__len__()):
+                    if self.Max_Memory < self.Memory_data_segment.__len__()+self.Stack_segment.__len__():
+                        self.State = "ML"
+                        return False
+                    if self.Max_Instructions<self.Instructions:
+                        self.State="TL"
+                        return False
                     self.Instructions+=1
                     if self.Registers["eip"]==-1:
                         return True
@@ -1128,7 +1968,7 @@ class Parser:
                         elif self.Special_Names_one_Operands.__contains__(self.Code_Lines[i][0])==True:
                             if (self.Code_Lines[i][0]=='call')&((self.Functions_names.__contains__(self.Code_Lines[i][1])==True)|(self.Irvine32_functions.__contains__(self.Code_Lines[i][1])==True)):
                                 self.Code_segment.append(self.Code_Lines[i])
-                            elif ((self.Code_Lines[i][0][0]=='j')|(self.Code_Lines[i][0]=='l')|(self.Code_Lines[i][0][0]=='r'))&(self.Labels_names.__contains__(self.Code_Lines[i][1])==True):
+                            elif ((self.Code_Lines[i][0][0]=='j')|(self.Code_Lines[i][0][0]=='l')|(self.Code_Lines[i][0][0]=='r'))&(self.Labels_names.__contains__(self.Code_Lines[i][1])==True):
                                self.Code_segment.append(self.Code_Lines[i])
                             elif ((self.Code_Lines[i][0]!='call')&(self.Code_Lines[i][0][0]!='j')&(self.Code_Lines[i][0][0]!='l')&(self.Code_Lines[i][0][0]!='r')):
                                 infix = self.postfix_code_line(self.Code_Lines[i][1:])
@@ -1140,6 +1980,7 @@ class Parser:
                                 self.Code_segment.append([self.Code_Lines[i][0],infix])
                             else:
                                 return False
+
                         elif self.Code_Lines[i][0]=='uses':
                             if self.Opened_function!="":
                                 for j in range(1,len(self.Code_Lines[i])):
