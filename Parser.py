@@ -62,7 +62,7 @@ class Parser:
     def __init__(self,Code,Max_Instructions,Max_Memory,Input_File):
         self.Input_File=Input_File
         Code=Code.replace('\t','   ')
-        self.Code =Code.lower()
+        self.Code =Code
         self.Max_Instructions=Max_Instructions
         self.Max_Memory=Max_Memory
 
@@ -174,7 +174,7 @@ class Parser:
                                         Line.append(self.Code[i])
 
                             else:
-                                Word += self.Code[i]
+                                Word += self.Code[i].lower()
 
 
         return self.Code_Lines
