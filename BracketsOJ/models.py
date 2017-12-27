@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 class userinfo(models.Model):
     UserModel = models.ForeignKey(User,on_delete=models.CASCADE)
     rate = models.IntegerField()
+    last_submit = models.DateTimeField(blank=True,null=True)
     def __str__(self):
         return self.UserModel.username
 
@@ -13,6 +14,7 @@ class userinfo(models.Model):
 class contest(models.Model):
     name = models.CharField(max_length=50)
     start_date = models.DateTimeField()
+    end_date = models.DateTimeField(blank=True,null=True)
     def __str__(self):
         return self.name
 
@@ -28,6 +30,7 @@ class problem(models.Model):
     notes = models.CharField(max_length=200, blank=True, null=True)
     added = models.DateField(auto_now_add=True, blank=True)
     contest = models.ForeignKey(contest, on_delete=models.SET_NULL, null=True, blank=True)
+    checker = models.CharField(max_length=50, default='ecmp')
     def __str__(self):
         return self.title
 
@@ -38,7 +41,7 @@ class submission(models.Model):
     memory = models.IntegerField(null=True,blank=True)
     submitted = models.DateTimeField(auto_now_add=True, blank=True)
     judged = models.DateTimeField(null=True,blank=True)
-    contest = models.ForeignKey(contest,on_delete=models.SET_NULL,null=True,blank=True)
+    problem = models.ForeignKey(problem, on_delete=models.CASCADE)
     STATUSES = [
         ('AC', 'Accepted'),
         ('TLE', 'Time Limit Exceeded'),
@@ -48,8 +51,15 @@ class submission(models.Model):
         ('QU', 'In queue'),
     ]
     status = models.CharField(max_length=50, choices=STATUSES, null=True,blank=True)
-    score = models.IntegerField(null=True,blank=True)
     code = models.TextField(default="")
     def __str__(self):
         return str(self.id)
 
+
+class user_score(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    contest = models.ForeignKey(contest, on_delete=models.CASCADE)
+    solved = models.IntegerField(default=0)
+    last_submission = models.DateTimeField(blank=True,null=True)
+    def __str__(self):
+        return str(self.user) + " Solved " + str(self.solved) + " in " + str(self.contest)

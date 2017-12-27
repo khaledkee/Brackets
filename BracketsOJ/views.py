@@ -1,9 +1,12 @@
 import os
+
+import datetime
 from django.shortcuts import render, get_object_or_404, get_list_or_404, redirect
 from django.http import HttpResponseBadRequest
 from django.conf import settings
-from .models import problem, submission, contest, User
+from .models import problem, submission, contest, userinfo
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .judge import start_judge
 
 
 # Create your views here.
@@ -41,12 +44,27 @@ def getSubmitView(request, problem_id, contest_id=None):
         return HttpResponseBadRequest('Your request is bad and you should feel bad!')
 
 
-def postSubmitView(request,problem_id=None,contest_if=None):
+def postSubmitView(request,problem_id=None,contest_id=None):
+    if problem_id is not None:
+        current_problem = get_object_or_404(problem, id=problem_id)
+        if contest_id is not None and current_problem.contest_id != contest_id:
+            return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+    else:
+        current_problem = {'id': 0, 'title': 'Custom test', 'time_limit': 100, 'memory_limit': 64}
     source_code = request.POST.get("source", "")
     if source_code is None or len(source_code) > 5000:
         return HttpResponseBadRequest('Your request is bad and you should feel bad!')
-    # judge
-    return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+    current_userinfo = get_object_or_404(userinfo, UserModel__id=request.user.id)
+    not_judges_submissions = len(submission.objects.filter(status='QU',user__id=request.user.id))
+    if not_judges_submissions >= 5 or (current_userinfo.last_submit is not None and (current_userinfo.last_submit - datetime.datetime.now()).total_seconds() < 30):
+        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+    new_submission = submission.objects.create(user_id=request.user.id, problem_id=problem_id, status='QU', code=source_code, problem=current_problem)
+    new_submission.save()
+    start_judge(new_submission)
+    try:
+        return redirect(('%s/user/'+ str(request.user.id) + '/submissions') % ('/contest/' + str(contest_id) if contest_id is not None else ''))
+    except:
+        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
 
 
 def submitView(request, problem_id=None, contest_id=None):
@@ -61,9 +79,9 @@ def submissionView(request, page_id=1, contest_id=None, user_id=None):
     if contest_id is not None:
         contestObj = get_object_or_404(contest,id=contest_id)
         if user_id is None:
-            submissions_list = submission.objects.filter(contest__id=contest_id)
+            submissions_list = submission.objects.filter(problem__contest__id=contest_id)
         else:
-            submissions_list = submission.objects.filter(contest__id=contest_id, user__id=user_id)
+            submissions_list = submission.objects.filter(problem__contest__id=contest_id, user__id=user_id)
     else:
         if user_id is None:
             submissions_list = submission.objects.all()

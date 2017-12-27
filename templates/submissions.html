@@ -19,8 +19,8 @@
             <nav class="row nav problem-text">
                 {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}">Dashboard</a>{% endif %}
                 {% if contest is not none %}<a class="nav-link" href="#">Standings</a>{% endif %}
-                {% if contest is none %}<a class="nav-link" href="/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
-                {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
+                {% if contest is none and user.id is not None %}<a class="nav-link" href="/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
+                {% if contest is not none and user.id is not None%}<a class="nav-link" href="/contest/{{ contest.id }}/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
                 {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}/submissions">Contest submissions</a>{% endif %}
                 {% if contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}
                 <a class="nav-link" href="{% url "customtest" %}">Custom Test</a>
@@ -40,6 +40,9 @@
                             User
                         </th>
                         <th>
+                            Problem
+                        </th>
+                        <th>
                             Status
                         </th>
                         <th>
@@ -47,9 +50,6 @@
                         </th>
                         <th>
                             Memory
-                        </th>
-                        <th>
-                            Score
                         </th>
                         <th>
                             Source
@@ -69,6 +69,9 @@
                                 {{ submission.user }}
                             </td>
                             <td>
+                                {{ submission.problem }}
+                            </td>
+                            <td>
                                 {{ submission.get_status_display }}
                             </td>
                             <td>
@@ -76,9 +79,6 @@
                             </td>
                             <td>
                                 {{ submission.memory }}
-                            </td>
-                            <td>
-                                {{ submission.score }}
                             </td>
                             <td>
                                 {% if user.id == submission.user.id %}
