@@ -55,8 +55,12 @@ class Parser:
     Max_Memory=0
     Max_Instructions=0
     State=""
+    Input_File=""
+    Input_File_index=0
+    Output_File=""
 
-    def __init__(self,Code,Max_Instructions,Max_Memory):
+    def __init__(self,Code,Max_Instructions,Max_Memory,Input_File):
+        self.Input_File=Input_File
         Code=Code.replace('\t','   ')
         self.Code =Code.lower()
         self.Max_Instructions=Max_Instructions
@@ -65,30 +69,31 @@ class Parser:
     def Start(self):
         if self.Split_to_Lines()!=False:
             if self.Remove_constants() == False:
-                print("syntax error")
-                return
+                #print("syntax error")
+                return False
+
             else:
                 if self.Build_Memory()==False:
                     if self.State!="":
                         return self.State
-                    print("syntax error")
-                    return
+                    #print("syntax error")
+                    return False
                 else:
                     if self.Build_code_segment() == False:
                         if self.State != "":
                             return self.State
-                        print("syntax error")
-                        return
+                        #print("syntax error")
+                        return False
                     else:
                         if self.Start_Code() == False:
                             if self.State != "":
                                 return self.State
-                            print("syntax error")
-                            return
+                            #print("syntax error")
+                            return False
                         else:
-                            return True
+                            return [self.Instructions,self.Memory_data_segment.__len__()+self.Stack_segment.__len__(),self.Output_File]
         else:
-            print("syntax error")
+           # print("syntax error")
             return False
 
         return True
@@ -376,25 +381,31 @@ class Parser:
             return True
 
     def Irvine32(self,String):
-        #"","readchar","readdec","readstring","readint","writechar","writedec","writestring","writeint"
+        #"","","","","readint","","","",""
         if String=="crlf":
-            print("")
+            self.Output_File+="\n"
+
         elif String=="dumpregs":
-            print("Registers ====>",self.Registers)
-            print("Flags ====>", self.Flags)
+            self.Output_File+=str(self.Registers)+"\n"+str(self.Flags)
+
+           # print("Registers ====>",self.Registers)
+           # print("Flags ====>", self.Flags)
         elif String=="writeint":
-            print("eax ====>",self.Registers["eax"])
+            self.Output_File += str(self.Registers["eax"])
+            #print("eax ====>",self.Registers["eax"])
         elif String == "writedec":
 
             if bool(self.Registers["eax"] &pow(2, (4 * 8)-1))==True:
                 a=self.Registers["eax"]
                 a = pow(2, (4 * 8)) -a
-                print("eax ====>-", a)
+                self.Output_File += '-'+str(a)
+                #print("eax ====>-", a)
             else:
-                print("eax ====> +", self.Registers["eax"])
+                self.Output_File += '+' + str(self.Registers["eax"])
+                #print("eax ====> +", self.Registers["eax"])
         elif String == "writechar":
-            print(chr(self.Registers["al"]))
-
+            self.Output_File += chr(self.Registers["al"])
+           # print(chr(self.Registers["al"]))
         elif String=="writestring":
 
             c=self.Get_value_from_memory(self.Registers["edx"],1)
@@ -404,7 +415,54 @@ class Parser:
                 s+=chr(c)
                 i+=1
                 c = self.Get_value_from_memory(self.Registers["edx"]+i, 1)
-            print(s)
+            self.Output_File += s
+            #print(s)
+        elif String=="readint":
+            num=""
+            while(self.Input_File_index<len(self.Input_File)):
+                if self.Input_File[self.Input_File_index]=="\n":
+                    break
+                self.Input_File_index+=1
+
+            if num.isdecimal()==True:
+                self.Registers["eax"]=int(num)
+            else:
+                return False
+
+        elif String == "readdec":
+
+            num = ""
+            while (self.Input_File_index < len(self.Input_File)):
+                if self.Input_File[self.Input_File_index] == "\n":
+                    break
+                self.Input_File_index += 1
+
+            if (num.isdecimal() == True)|((num[1:].isdecimal() == True)&((num[0] == '-')|num[0]=='+')):
+                self.Registers["eax"] = int(num)
+            else:
+                return False
+
+        elif String == "readchar":
+            if (self.Input_File_index < len(self.Input_File)):
+                self.Registers["al"]=ord(self.Input_File[self.Input_File_index])
+                self.Input_File_index += 1
+            else:
+                return False
+
+           # print(chr(self.Registers["al"]))
+        elif String=="readstring":
+
+            edx=self.Registers["edx"]
+            ecx=self.Registers["ecx"]
+            while (self.Input_File_index < len(self.Input_File))&(self.Registers["ecx"]>=0):
+                if self.Input_File[self.Input_File_index] == "\n":
+                    self.Save_value_in_memory(edx, ord(self.Input_File[self.Input_File_index]), 1)
+                    break
+
+                self.Save_value_in_memory(edx,ord(self.Input_File[self.Input_File_index]),1)
+                edx+=1
+                ecx-=1
+                self.Input_File_index += 1
 
         return True
 
