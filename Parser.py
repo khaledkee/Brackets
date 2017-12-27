@@ -1993,6 +1993,9 @@ class Parser:
         return infix
 
     def Build_code_segment(self):
+
+        if self.Build_code_segment_Lables()==False:
+            return False
         i = 0
         if (self.Code_Lines[0].__len__() == 1) & (self.Code_Lines[0][0] == ".code"):
             self.Code_Lines.remove(self.Code_Lines[0])
@@ -2023,11 +2026,8 @@ class Parser:
                             else:
                                 return False
                         elif self.Code_Lines[i][1]==':':
-                            if (self.Check_is_valid(self.Code_Lines[i][0])==True):
                                 self.Labels_names[self.Code_Lines[i][0]]=self.Code_segment.__len__()
                                 self.Code_segment.append("")
-                            else:
-                                return False
                         elif self.Special_Names_one_Operands.__contains__(self.Code_Lines[i][0])==True:
                             if (self.Code_Lines[i][0]=='call')&((self.Functions_names.__contains__(self.Code_Lines[i][1])==True)|(self.Irvine32_functions.__contains__(self.Code_Lines[i][1])==True)):
                                 self.Code_segment.append(self.Code_Lines[i])
@@ -2056,13 +2056,10 @@ class Parser:
                             return False
                     else:
                         if self.Code_Lines[i][1] == ':':
-                            if (self.Check_is_valid(self.Code_Lines[i][0]) == True):
                                 self.Labels_names[self.Code_Lines[i][0]] = self.Code_segment.__len__()
                                 self.Code_segment.append("")
                                 self.Code_Lines[i] = self.Code_Lines[i][2:]
                                 i = i - 1
-                            else:
-                                return False
                         elif self.Code_Lines[i][1]=='proc':
                             if (self.Opened_function=="")&(self.Check_is_valid(self.Code_Lines[i][0])==True):
                                 self.Opened_function=self.Code_Lines[i][0]
@@ -2104,6 +2101,32 @@ class Parser:
                             return False
                 else:
                     return False
+                i = i + 1
+
+
+        return True
+
+
+    def Build_code_segment_Lables(self):
+        i = 0
+        while (i < self.Code_Lines.__len__() - 1):
+
+                if self.Code_Lines[i].__len__()>1:
+
+                    if self.Code_Lines[i].__len__()==2:
+
+                        if self.Code_Lines[i][1]==':':
+                            if (self.Check_is_valid(self.Code_Lines[i][0])==True):
+                                self.Labels_names[self.Code_Lines[i][0]]=0
+                            else:
+                                return False
+
+                    else:
+                        if self.Code_Lines[i][1] == ':':
+                            if (self.Check_is_valid(self.Code_Lines[i][0]) == True):
+                                self.Labels_names[self.Code_Lines[i][0]] = 0
+                            else:
+                                return False
                 i = i + 1
 
 
