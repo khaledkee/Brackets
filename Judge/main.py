@@ -1,5 +1,5 @@
-import Parser
-import Extra_functions
+from Judge import Parser
+
 Code ="""
 include irvine32.inc
 .data
@@ -45,7 +45,7 @@ Input_File="""Hi My Name is Negm
 
 ###########Code,Max_Instructions,Max_Memory
 
-P=Parser.Parser(Code,1000,1000,Input_File)
+P= Parser.Parser(Code, 1000, 1000, Input_File)
 
 P.Start()
 # return [Instructions,Memory,Output_File] | False | TL | ML

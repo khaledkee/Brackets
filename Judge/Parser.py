@@ -1,4 +1,4 @@
-import Extra_functions
+from Judge import Extra_functions
 
 
 class Parser:
@@ -1974,7 +1974,7 @@ class Parser:
                     try:
                         if ((Line[i][0] == Line[i][len(Line[i]) - 1]) & (Line[i][0] == '"')) | (
                                     (Line[i][0] == Line[i][len(Line[i]) - 1]) & (Line[i][0] == "\'")):
-                            tmp=Extra_functions.convert_string(Line[i])
+                            tmp= Extra_functions.convert_string(Line[i])
                             expression.append(tmp)
                             continue
                         raise Exception("NotString")
@@ -2196,7 +2196,7 @@ class Parser:
                                                 tmp = stak[stak.__len__() - 1]
                                             elif tmp==-3:
 
-                                                tmp=Extra_functions.convert_string(stak[stak.__len__() - 1])
+                                                tmp= Extra_functions.convert_string(stak[stak.__len__() - 1])
 
                                             else:
                                                 tmp = tmp[0]
@@ -2254,7 +2254,7 @@ class Parser:
                         var_type_len.append(self.Memory_data_segment.__len__())
                         var_type_len.append(Line[1])
                         var_type_len.append(0)
-                        infix=Extra_functions.postfix(Line[2:])
+                        infix= Extra_functions.postfix(Line[2:])
                         if infix !=False:
                             if Line[Line.__len__()-1]==',':
                                 Comma=True
