@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}
+Contests
+{% endblock title %}
+{% block content %}
+
+        <div>
+            <nav class="row nav problem-text">
+                <a class="nav-link" href="problems">Problems</a>
+                <a class="nav-link" href="/customtest">Custom Test</a>
+            </nav>
+        </div>
+
+        <div>
+            <p>Contests</p>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th colspan="2">
+                                Name
+                            </th>
+                            <th>
+                                Start time
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="problem-text">
+                    {% for contest in contests %}
+                        <tr>
+                            <td colspan="2">
+                                <a href="contest/{{ contest.id }}">{{ contest.name }}</a>
+                            </td>
+                            <td>
+                                {{ contest.start_date }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+{% endblock content %}

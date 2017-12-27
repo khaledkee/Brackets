@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}
+    {% if contest is not None %}Contest {{ contest.id }} {% endif %}Submissions
+{% endblock %}
+{% block jsblock %}
+        <script language="JavaScript">
+            $(document).ready(function () {
+                $('.view-code').on('click', function () {
+                    var $this = $(this);
+                    $('#submission-header').text('Submission: ' + $this.data('id'));
+                    $('#source').text($this.data('source'));
+
+                });
+            });
+        </script>
+{% endblock %}
+{% block content %}
+        <div>
+            <nav class="row nav problem-text">
+                {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}">Dashboard</a>{% endif %}
+                {% if contest is not none %}<a class="nav-link" href="#">Standings</a>{% endif %}
+                {% if contest is none %}<a class="nav-link" href="/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
+                {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
+                {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}/submissions">Contest submissions</a>{% endif %}
+                {% if contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}
+                <a class="nav-link" href="{% url "customtest" %}">Custom Test</a>
+            </nav>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>
+                            Submitted
+                        </th>
+                        <th>
+                            Judged
+                        </th>
+                        <th>
+                            User
+                        </th>
+                        <th>
+                            Status
+                        </th>
+                        <th>
+                            Time
+                        </th>
+                        <th>
+                            Memory
+                        </th>
+                        <th>
+                            Score
+                        </th>
+                        <th>
+                            Source
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions %}
+                        <tr>
+                            <td>
+                                {{ submission.submitted }}
+                            </td>
+                            <td>
+                                {{ submission.judged }}
+                            </td>
+                            <td>
+                                {{ submission.user }}
+                            </td>
+                            <td>
+                                {{ submission.get_status_display }}
+                            </td>
+                            <td>
+                                {{ submission.time }}
+                            </td>
+                            <td>
+                                {{ submission.memory }}
+                            </td>
+                            <td>
+                                {{ submission.score }}
+                            </td>
+                            <td>
+                                {% if user.id == submission.user.id %}
+                                    <button data-source="{{ submission.code }}" data-id="{{ submission.id }}" class="view-code btn btn-primary" type="button" data-toggle="modal" data-target="#codeModal">
+                                        View Code
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="modal fade" id="codeModal" tabindex="-1" role="dialog" aria-labelledby="submission-header" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 id="submission-header" class="modal-title">Submission</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <pre id="source">Code goes here.</pre>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            {% if submissions.has_other_pages %}
+                <ul class="pagination">
+                    {% if submissions.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ submissions.previous_page_number }}">&laquo;</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span>&laquo;</span></li>
+                    {% endif %}
+                    {% for i in submissions.paginator.page_range %}
+                        {% if submissions.number == i %}
+                            <li class="page-item active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if submissions.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ submissions.next_page_number }}">&raquo;</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span>&raquo;</span></li>
+                    {% endif %}
+              </ul>
+            {% endif %}
+        </div>
+{% endblock %}

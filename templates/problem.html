@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}
+    Problem {{ problem.id }}
+{% endblock title %}
+{% block css %}
+    <style>
+            .sample-text{
+                border: 1px solid rgba(0, 0, 0, 0.15);
+                -webkit-border-radius: 4px;
+                -moz-border-radius: 4px;
+                border-radius: 4px;
+                background: #f5f5f5;
+                padding: 4px;
+            }
+            .copy-btn {
+                font-size: 0.5em;
+                float: right;
+                position: static;
+            }
+    </style>
+{% endblock css %}
+{% block jsblock %}
+        <script language="JavaScript">
+            $(document).ready(function() {
+                $('.copy-btn').on('click', function() {
+                    var copyText = $(this).closest('div')[0].innerText;
+                    copyText = copyText.slice(5);
+                    var $temp = $("<textarea>");
+                    $('body').append($temp);
+                    $temp.val(copyText);
+                    $temp.select();
+                    document.execCommand("Copy");
+                    $temp.remove();
+                });
+            });
+        </script>
+{% endblock jsblock %}
+{% block content %}
+        <div>
+            <nav class="row nav problem-text">
+                {% if problem.contest is not none %}<a class="nav-link" href="#">Dashboard</a>{% endif %}
+                <a class="nav-link" href="{{ problem.id }}/submit">Submit</a>
+                {% if problem.contest is not none %}<a class="nav-link" href="#">Standings</a>{% endif %}
+                <a class="nav-link" href="#">My submissions</a>
+                {% if problem.contest is not none %}<a class="nav-link" href="/contest/{{ problem.contest_id }}/submissions">Contest submissions</a>{% endif %}
+                {% if problem.contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}
+                <a class="nav-link" href="/customtest">Custom Test</a>
+            </nav>
+        </div>
+
+        <div class="mx-auto" style="text-align: center">
+            <div class="offset-5 col-3"><b>{{ problem.id }}. {{ problem.title }}</b></div>
+            <div class="offset-5 col-3 problem-text">time limit: {{ problem.time_limit }} instruction(s)</div>
+            <div class="offset-5 col-3 problem-text">memory limit: {{ problem.memory_limit }} byte(s)</div>
+        </div>
+        <div>
+            <p class="problem-text">{{ problem.statement }}</p>
+        </div>
+        <div>
+            <p>Input: </p>
+            <p class="problem-text">{{ problem.input_section }}</p>
+        </div>
+        <div>
+            <p>Output: </p>
+            <p class="problem-text">{{ problem.output_section }}</p>
+        </div>
+        <div>
+            <p>Sample</p>
+            {% for sample in samples %}
+                <p class="problem-text">Input</p>
+                <div class="sample-text">
+                    <button class="btn btn-secondary copy-btn">Copy</button>
+                    {% for line in sample.input %}
+                        {{ line }}
+                        <br>
+                    {% endfor %}
+                </div>
+                <p class="problem-text">Output</p>
+                <div class="sample-text">
+                    <button class="btn btn-secondary copy-btn">Copy</button>
+                    {% for line in sample.output %}
+                        {{ line }}
+                        <br>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        {% if problem.notes is not none %}
+            <div>
+                <p>Notes: </p>
+                <p class="problem-text">{{ problem.notes }}</p>
+            </div>
+        {% endif %}
+        <div class="mx-auto mt-3">
+            <a class="btn btn-primary" href="{{ problem.id }}/submit">Submit</a>
+        </div>
+{% endblock content %}

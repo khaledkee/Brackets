@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}
+    Problems
+{% endblock title %}
+{% block content %}
+        <div>
+            <nav class="row nav problem-text">
+                <a class="nav-link" href="contests">Contests</a>
+                <a class="nav-link" href="/customtest">Custom Test</a>
+            </nav>
+        </div>
+
+        <div>
+            <p>Problems</p>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th colspan="2">
+                                Title
+                            </th>
+                            <th>
+                                Time Limit
+                            </th>
+                            <th>
+                                Memory Limit
+                            </th>
+                            <th>
+                                Submit
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="problem-text">
+                    {% for problem in problems %}
+                        <tr>
+                            <td colspan="2">
+                                <a href="problem/{{ problem.id }}">{{ problem.title }}</a>
+                            </td>
+                            <td>
+                                {{ problem.time_limit }} instructions(s)
+                            </td>
+                            <td>
+                                {{ problem.memory_limit }} byte(s)
+                            </td>
+                            <td>
+                                <a href="problem/{{ problem.id }}/submit">Submit</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+{% endblock content %}
