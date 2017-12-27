@@ -421,7 +421,9 @@ class Parser:
             num=""
             while(self.Input_File_index<len(self.Input_File)):
                 if self.Input_File[self.Input_File_index]=="\n":
+                    self.Input_File_index += 1
                     break
+                num+=self.Input_File[self.Input_File_index]
                 self.Input_File_index+=1
 
             if num.isdecimal()==True:
@@ -434,7 +436,9 @@ class Parser:
             num = ""
             while (self.Input_File_index < len(self.Input_File)):
                 if self.Input_File[self.Input_File_index] == "\n":
+                    self.Input_File_index += 1
                     break
+                num += self.Input_File[self.Input_File_index]
                 self.Input_File_index += 1
 
             if (num.isdecimal() == True)|((num[1:].isdecimal() == True)&((num[0] == '-')|num[0]=='+')):
@@ -457,6 +461,7 @@ class Parser:
             while (self.Input_File_index < len(self.Input_File))&(self.Registers["ecx"]>=0):
                 if self.Input_File[self.Input_File_index] == "\n":
                     self.Save_value_in_memory(edx, ord(self.Input_File[self.Input_File_index]), 1)
+                    self.Input_File_index += 1
                     break
 
                 self.Save_value_in_memory(edx,ord(self.Input_File[self.Input_File_index]),1)
