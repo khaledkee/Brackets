@@ -18,12 +18,12 @@
         <div>
             <nav class="row nav problem-text">
                 {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}">Dashboard</a>{% endif %}
-                {% if contest is not none %}<a class="nav-link" href="#">Standings</a>{% endif %}
+                {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}/scoreboard">Standings</a>{% endif %}
                 {% if contest is none and user.id is not None %}<a class="nav-link" href="/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
                 {% if contest is not none and user.id is not None%}<a class="nav-link" href="/contest/{{ contest.id }}/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
                 {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}/submissions">Contest submissions</a>{% endif %}
-                {% if contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}
-                <a class="nav-link" href="{% url "customtest" %}">Custom Test</a>
+{#                {% if contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}#}
+{#                <a class="nav-link" href="{% url "customtest" %}">Custom Test</a>#}
             </nav>
         </div>
         <div class="table-responsive">
@@ -110,27 +110,39 @@
                 </div>
             </div>
         </div>
-        <div>
+        <nav class="Page navigation offset-4">
             {% if submissions.has_other_pages %}
-                <ul class="pagination">
+                <ul class="pagination mx-auto">
                     {% if submissions.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?page={{ submissions.previous_page_number }}">&laquo;</a></li>
+                        {% if contest is not None %}
+                            <li class="page-item"><a class="page-link" href="/contest/{{ contest.id }}/submissions/{{ submissions.previous_page_number }}">&laquo;</a></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="/submissions/{{ submissions.previous_page_number }}">&laquo;</a></li>
+                        {% endif %}
                     {% else %}
-                        <li class="page-item disabled"><span>&laquo;</span></li>
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
                     {% endif %}
                     {% for i in submissions.paginator.page_range %}
                         {% if submissions.number == i %}
-                            <li class="page-item active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                            <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only">(current)</span></span></li>
                         {% else %}
-                            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                            {% if contest is not None %}
+                                <li class="page-item"><a class="page-link" href="/contest/{{ contest.id }}/submissions/{{ i }}">{{ i }}</a></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link" href="/submissions/{{ i }}">{{ i }}</a></li>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
                     {% if submissions.has_next %}
-                        <li class="page-item"><a class="page-link" href="?page={{ submissions.next_page_number }}">&raquo;</a></li>
+                        {% if contest is not None %}
+                            <li class="page-item"><a class="page-link" href="/contest/{{ contest.id }}/submissions/{{ submissions.next_page_number }}">&raquo;</a></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="/submissions/{{ submissions.next_page_number }}">&raquo;</a></li>
+                        {% endif %}
                     {% else %}
-                        <li class="page-item disabled"><span>&raquo;</span></li>
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
                     {% endif %}
               </ul>
             {% endif %}
-        </div>
+        </nav>
 {% endblock %}

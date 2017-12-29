@@ -1,50 +1,15 @@
-<!DOCTYPE html> <!-- todo -->
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <title>Contest {{ contest.id }} dashboard</title>
-        <link rel="shortcut icon" href="/static/img/favicon.ico">
-        <link rel="stylesheet" href="https://necolas.github.io/normalize.css/7.0.0/normalize.css">
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-        <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
-        <style>
-            body {
-                line-height: 1.5em;
-                font-size: 1.4rem;
-                font-family: "Roboto", "Lucida Grande", Verdana, Arial, sans-serif;
-                padding-bottom: 47px;
-            }
-            .problem-text{
-                font-size: 1rem;
-            }
-        </style>
-    </head>
-    <body class="container">
-        {% load static %}
-        <div class="row">
-            <img class="col-3" src="{% static 'img/logo.jpg' %}"/>
-            <div class="offset-6 col-3">
-                <a  href="">login</a>
-            </div>
-        </div>
-
-        <div>
-            <nav class="row nav">
-
-            </nav>
-        </div>
-
+{% extends 'base.html' %}
+{% block title %}
+    Contest {{ contest.id }} dashboard
+{% endblock %}
+{% block content %}
         <div>
             <nav class="row nav problem-text">
-                <a class="nav-link" href="#">Dashboard</a>
-                <a class="nav-link" href="#">Standings</a>
-                <a class="nav-link" href="#">My submissions</a>
+                {% if contest is not none %}<a class="nav-link" href="/contest/{{ contest.id }}/scoreboard">Standings</a>{% endif %}
+                {% if user.id is not None%}<a class="nav-link" href="/contest/{{ contest.id }}/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
                 <a class="nav-link" href="/contest/{{ contest.id }}/submissions">Contest submissions</a>
-                <a class="nav-link" href="#">Editorial</a>
-                <a class="nav-link" href="/customtest">Custom Test</a>
+{#                <a class="nav-link" href="#">Editorial</a>#}
+{#                <a class="nav-link" href="/customtest">Custom Test</a>#}
             </nav>
         </div>
 
@@ -93,5 +58,4 @@
                 </table>
             </div>
         </div>
-    </body>
-</html>
+{% endblock %}

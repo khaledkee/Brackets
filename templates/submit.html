@@ -30,8 +30,8 @@
                     {% if problem.contest is not none %}<a class="nav-link" href="/contest/{{ problem.contest.id }}/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
                     {% if problem.contest is none %}<a class="nav-link" href="/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
                     {% if problem.contest is not none %}<a class="nav-link" href="#">Contest submissions</a>{% endif %}
-                    {% if problem.contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}
-                    <a class="nav-link" href="/customtest">Custom Test</a>
+{#                    {% if problem.contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}#}
+{#                    <a class="nav-link" href="/customtest">Custom Test</a>#}
                 </nav>
             </div>
         {% endif %}

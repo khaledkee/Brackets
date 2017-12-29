@@ -86,7 +86,8 @@ class Parser:
                                 return self.State
                             return False
                         else:
-                            return [self.Instructions, len(self.Memory_data_segment)+len(self.Stack_segment), self.Output_File]
+                            return [self.Instructions, len(self.Memory_data_segment) + len(self.Stack_segment),
+                                    self.Output_File]
         else:
             return False
 
@@ -342,7 +343,7 @@ class Parser:
                 return True
             return False
         elif (String == "ja") or (String == "jnbe") or (String == "jg") or (String == "jnle"):
-            if self.Flags["sf"] == self.Flags["of"]:
+            if self.Flags["sf"] == 0 and self.Flags["of"] == 0:
                 return True
             return False
         elif (String == "jb") or (String == "jnae") or (String == "jl") or (String == "jnge"):
@@ -350,7 +351,7 @@ class Parser:
                 return True
             return False
         elif (String == "jae") or (String == "jnb") or (String == "jge") or (String == "jnl"):
-            if self.Flags["sf"] == self.Flags["of"]:
+            if self.Flags["sf"] == 0 and self.Flags["of"] == 0:
                 return True
             elif self.Flags["zf"] == 1:
                 return True
@@ -381,9 +382,7 @@ class Parser:
             self.Output_File += "\n"
         # elif String == "dumpregs":
         #     self.Output_File += str(self.Registers) + "\n" + str(self.Flags)
-        elif String == "writeint":
-            self.Output_File += str(self.Registers["eax"])
-        elif String == "writedec":
+        elif String == "writeint" or String == "writedec":
             if bool(self.Registers["eax"] & pow(2, (4 * 8) - 1)) is True:
                 a = self.Registers["eax"]
                 a = pow(2, (4 * 8)) - a
@@ -444,9 +443,185 @@ class Parser:
         return True
 
     def Mul_X(self, String, infix):
+        tmp1 = self.Check_code_operand(infix[0])
+        if (tmp1 == False):
+            return False
+        if (tmp1[0] == 'imm') | (tmp1[2] == 0):
+            return False
+
+        if String == 'mul':
+
+            a = 0
+            if (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+
+            if tmp1[2] == 1:
+                a = a * self.Registers["al"]
+                if a >= pow(2, 2 * 8):
+                    a = a & (pow(2, 2 * 8) - 1)
+                self.Registers["ax"] = a
+            elif tmp1[2] == 2:
+                a = a * self.Registers["ax"]
+                b = a
+                if a >= pow(2, 2 * 8):
+                    a = a & (pow(2, 2 * 8) - 1)
+                self.Registers["ax"] = a
+
+                b = b.__rshift__(16)
+                if b >= pow(2, 2 * 8):
+                    b = b & (pow(2, 2 * 8) - 1)
+                self.Registers["dx"] = b
+            elif tmp1[2] == 4:
+                a = a * self.Registers["eax"]
+                b = a
+                if a >= pow(2, 4 * 8):
+                    a = a & (pow(2, 4 * 8) - 1)
+                self.Registers["eax"] = a
+                if bool(a & pow(2, (tmp1[2] * 8) - 1)):
+                    self.Flags["sf"] = 1
+                else:
+                    self.Flags["sf"] = 0
+
+                b = b.__rshift__(32)
+                if b >= pow(2, 4 * 8):
+                    b = b & (pow(2, 4 * 8) - 1)
+                self.Registers["edx"] = b
+                if b != 0:
+                    self.Flags["cf"] = 1
+                    self.Flags["of"] = 1
+                else:
+                    self.Flags["cf"] = 0
+                    self.Flags["of"] = 0
+
+        elif String == 'imul':
+
+            a = 0
+            if (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+
+            if tmp1[2] == 1:
+                a = a * self.Registers["al"]
+                if a >= pow(2, 2 * 8):
+                    a = a & (pow(2, 2 * 8) - 1)
+                self.Registers["ax"] = a
+            elif tmp1[2] == 2:
+                a = a * self.Registers["ax"]
+                b = a
+                if a >= pow(2, 2 * 8):
+                    a = a & (pow(2, 2 * 8) - 1)
+                self.Registers["ax"] = a
+
+                b = b.__rshift__(16)
+                if b >= pow(2, 2 * 8):
+                    b = b & (pow(2, 2 * 8) - 1)
+                self.Registers["dx"] = b
+            elif tmp1[2] == 4:
+                a = a * self.Registers["eax"]
+                b = a
+                if a >= pow(2, 4 * 8):
+                    a = a & (pow(2, 4 * 8) - 1)
+                self.Registers["eax"] = a
+
+                b = b.__rshift__(32)
+                if b >= pow(2, 4 * 8):
+                    b = b & (pow(2, 4 * 8) - 1)
+                self.Registers["edx"] = b
+
         return True
 
     def Div_X(self, String, infix):
+        tmp1 = self.Check_code_operand(infix[0])
+        if (tmp1 == False):
+            return False
+        if (tmp1[0] == 'imm') | (tmp1[2] == 0):
+            return False
+
+        if String == 'div':
+
+            a = 0
+            if (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+
+            if tmp1[2] == 1:
+                a = self.Registers["ax"] / a
+                b = a
+                if a >= pow(2, 1 * 8):
+                    a = a & (pow(2, 1 * 8) - 1)
+                self.Registers["al"] = a
+
+                b = b.__rshift__(8)
+                if b >= pow(2, 1 * 8):
+                    b = b & (pow(2, 1 * 8) - 1)
+                self.Registers["ah"] = b
+
+            elif tmp1[2] == 2:
+                a = (self.Registers["dx"].__lshift__(16) | self.Registers["ax"]) / a
+                b = a
+                if a >= pow(2, 2 * 8):
+                    a = a & (pow(2, 2 * 8) - 1)
+                self.Registers["ax"] = a
+
+                b = b.__rshift__(16)
+                if b >= pow(2, 2 * 8):
+                    b = b & (pow(2, 2 * 8) - 1)
+                self.Registers["dx"] = b
+            elif tmp1[2] == 4:
+                a, b = divmod((self.Registers["edx"].__lshift__(32) | self.Registers["eax"]), a)
+                if a >= pow(2, 4 * 8):
+                    a = a & (pow(2, 4 * 8) - 1)
+                self.Registers["eax"] = a
+
+                if b >= pow(2, 4 * 8):
+                    b = b & (pow(2, 4 * 8) - 1)
+                self.Registers["edx"] = b
+        elif String == 'idiv':
+
+            a = 0
+            if (tmp1[0] != 'add'):
+                a = tmp1[1]
+            else:
+                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
+
+            if tmp1[2] == 1:
+                a = int(self.Registers["ax"] / a)
+                b = a
+                if a >= pow(2, 1 * 8):
+                    a = a & (pow(2, 1 * 8) - 1)
+                self.Registers["al"] = a
+
+                b = b.__rshift__(8)
+                if b >= pow(2, 1 * 8):
+                    b = b & (pow(2, 1 * 8) - 1)
+                self.Registers["ah"] = b
+
+            elif tmp1[2] == 2:
+                a = int((self.Registers["dx"].__lshift__(16) | self.Registers["ax"]) / a)
+                b = a
+                if a >= pow(2, 2 * 8):
+                    a = a & (pow(2, 2 * 8) - 1)
+                self.Registers["ax"] = a
+
+                b = b.__rshift__(16)
+                if b >= pow(2, 2 * 8):
+                    b = b & (pow(2, 2 * 8) - 1)
+                self.Registers["dx"] = b
+            elif tmp1[2] == 4:
+                a = int((self.Registers["edx"].__lshift__(32) | self.Registers["eax"]) / a)
+                b = a
+                if a >= pow(2, 4 * 8):
+                    a = a & (pow(2, 4 * 8) - 1)
+                self.Registers["eax"] = a
+
+                b = b.__rshift__(32)
+                if b >= pow(2, 4 * 8):
+                    b = b & (pow(2, 4 * 8) - 1)
+                self.Registers["edx"] = b
         return True
 
     def Push_Pop(self, String, infix):
@@ -587,7 +762,7 @@ class Parser:
     def Mov_X(self, String, infix):
         tmp1 = self.Check_code_operand(infix[0])
         tmp2 = self.Check_code_operand(infix[1])
-        if not tmp1 or not tmp2:
+        if tmp1 is False or tmp2 is False:
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
             return False
@@ -700,7 +875,7 @@ class Parser:
         else:
             self.Flags["ac"] = 1
 
-        v = bool((a & (pow(2, (tmp1[2] * 8) - 2) - 1)) + (b & (pow(2, (tmp1[2] * 8) - 2) - 1)))
+        v = not bool((a & (pow(2, (tmp1[2] * 8) - 2) - 1)) + (b & (pow(2, (tmp1[2] * 8) - 2) - 1)))
 
         a = a + b
 
@@ -780,7 +955,7 @@ class Parser:
 
         tmp1 = self.Check_code_operand(infix[0])
         tmp2 = self.Check_code_operand(infix[1])
-        if (tmp1 == False) or (tmp2 == False):
+        if (tmp1 is False) or (tmp2 is False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
             return False
@@ -1563,7 +1738,7 @@ class Parser:
                     if len(stak) > 1:
                         tmp1 = self.Check_code_operand([stak[len(stak) - 1]])
                         tmp2 = self.Check_code_operand([stak[len(stak) - 2]])
-                        if (tmp1 == False) or (tmp2 == False):
+                        if (tmp1 is False) or (tmp2 is False):
                             return False
                         tmp1_ = tmp1[1]
                         tmp2_ = tmp2[1]
@@ -1583,7 +1758,7 @@ class Parser:
                     else:
                         if (Operand[i] == '+') or (Operand[i] == '-'):
                             tmp1 = self.Check_code_operand([stak[len(stak) - 1]])
-                            if not tmp1:
+                            if tmp1 is False:
                                 return False
                             tmp1_ = tmp1[1]
                             if Operand[i] == '-':
@@ -1595,7 +1770,7 @@ class Parser:
                 elif (Operand[i] == 'lengthof') or (Operand[i] == 'sizeof') or (Operand[i] == 'type'):
                     if len(stak) > 0:
                         tmp1 = self.Check_code_operand([stak[len(stak) - 1]])
-                        if not tmp1:
+                        if tmp1 is False:
                             return False
                         if (tmp1[0] != "var") and ((Operand[i] == 'lengthof') or (Operand[i] == 'sizeof')):
                             return False
@@ -2169,6 +2344,12 @@ class Parser:
                                         else:
                                             return 0
                                 elif infix[i][j] == 'dup':
+                                    x1 = stak[0]
+                                    x2 = stak[1]
+                                    stak.clear()
+                                    for a in range(0, x1):
+                                        tmp_memory.append([x2])
+
                                     a = 20
                                     ########
                                 elif (infix[i][j] == 'lengthof') or (infix[i][j] == 'sizeof') or (
@@ -2203,7 +2384,8 @@ class Parser:
                                             return 0
                                         else:
                                             stak.append(infix[i][j])
-                            tmp_memory.append(stak)
+                            if stak.__len__() != 0:
+                                tmp_memory.append(stak)
 
                         if not self.Save_in_Memory(8 * self.Type(Line[0]), tmp_memory):
                             return 0
@@ -2288,6 +2470,13 @@ class Parser:
                                             else:
                                                 return 0
                                     elif infix[i][j] == 'dup':
+                                        x1 = stak[0]
+                                        x2 = stak[1]
+                                        stak.clear()
+                                        for a in range(0, x1):
+                                            tmp_memory.append([x2])
+                                        # print("1  ",stak,tmp_memory)
+
                                         a = 20
                                         ########
                                     elif (infix[i][j] == 'lengthof') or (infix[i][j] == 'sizeof') or (
@@ -2322,7 +2511,8 @@ class Parser:
                                                 return 0
                                             else:
                                                 stak.append(infix[i][j])
-                                tmp_memory.append(stak)
+                                if stak.__len__() != 0:
+                                    tmp_memory.append(stak)
 
                             if not self.Save_in_Memory(8 * self.Type(Line[1]), tmp_memory):
                                 return 0
@@ -2411,7 +2601,11 @@ class Parser:
                                 else:
                                     return 0
                         elif infix[i][j] == 'dup':
-                            a = 20
+                            x1 = stak[0]
+                            x2 = stak[1]
+                            stak.clear()
+                            for a in range(0, x1):
+                                tmp_memory.append([x2])
                             ########
                         elif (infix[i][j] == 'lengthof') or (infix[i][j] == 'sizeof') or (infix[i][j] == 'type'):
                             if len(stak) > 0:
@@ -2444,7 +2638,8 @@ class Parser:
                                     return 0
                                 else:
                                     stak.append(infix[i][j])
-                    tmp_memory.append(stak)
+                    if stak.__len__() != 0:
+                        tmp_memory.append(stak)
                 L1 = len(self.Memory_data_segment)
 
                 if not self.Save_in_Memory(8 * self.Data_type_for_comma, tmp_memory):

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}
+    Contest {{ contest.id }} standings
+{% endblock %}
+{% block content %}
+        <div>
+            <nav class="row nav problem-text">
+                <a class="nav-link" href="/contest/{{ contest.id }}">Dashboard</a>
+                {% if user.id is not None%}<a class="nav-link" href="/contest/{{ contest.id }}/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
+                <a class="nav-link" href="/contest/{{ contest.id }}/submissions">Contest submissions</a>
+{#                <a class="nav-link" href="#">Editorial</a>#}
+{#                <a class="nav-link" href="{% url "customtest" %}">Custom Test</a>#}
+            </nav>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>
+                            rank
+                        </th>
+                        <th>
+                            user
+                        </th>
+                        <th>
+                            score
+                        </th>
+                        {% for problem in problems %}
+                            <th>
+                                {{ problem }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_name, user_score in scoreboard.items %}
+                        <tr>
+                            <td>
+                                {{ forloop.counter0 }}
+                            </td>
+                            <td>
+                                {{ user_name }}
+                            </td>
+                            <td>
+                                {{ user_score.bracketsscore }}
+                            </td>
+                            {% for problem in problems %}
+                                <td>
+                                    {% if problem.title not in user_score %}
+                                        0
+                                    {% else %}
+                                        {% for problem_name, problem_score in user_score.items %}
+                                            {% if problem_name == problem.title %}
+                                                {{ problem_score }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+{% endblock %}

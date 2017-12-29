@@ -38,13 +38,13 @@
 {% block content %}
         <div>
             <nav class="row nav problem-text">
-                {% if problem.contest is not none %}<a class="nav-link" href="#">Dashboard</a>{% endif %}
+                {% if problem.contest is not none %}<a class="nav-link" href="/contest/{{ problem.contest_id }}">Dashboard</a>{% endif %}
                 <a class="nav-link" href="{{ problem.id }}/submit">Submit</a>
-                {% if problem.contest is not none %}<a class="nav-link" href="#">Standings</a>{% endif %}
-                <a class="nav-link" href="#">My submissions</a>
+                {% if problem.contest is not none %}<a class="nav-link" href="/contest/{{ problem.contest_id }}/scoreboard">Standings</a>{% endif %}
+                {% if user is not None %}<a class="nav-link" href="/user/{{ user.id }}/submissions">My submissions</a>{% endif %}
                 {% if problem.contest is not none %}<a class="nav-link" href="/contest/{{ problem.contest_id }}/submissions">Contest submissions</a>{% endif %}
-                {% if problem.contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}
-                <a class="nav-link" href="/customtest">Custom Test</a>
+{#                {% if problem.contest is not none %}<a class="nav-link" href="#">Editorial</a>{% endif %}#}
+{#                <a class="nav-link" href="/customtest">Custom Test</a>#}
             </nav>
         </div>
 

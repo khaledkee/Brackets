@@ -7,7 +7,7 @@ Contests
         <div>
             <nav class="row nav problem-text">
                 <a class="nav-link" href="problems">Problems</a>
-                <a class="nav-link" href="/customtest">Custom Test</a>
+{#                <a class="nav-link" href="/customtest">Custom Test</a>#}
             </nav>
         </div>
 
@@ -23,6 +23,9 @@ Contests
                             <th>
                                 Start time
                             </th>
+                            <th>
+                                End time
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="problem-text">
@@ -33,6 +36,9 @@ Contests
                             </td>
                             <td>
                                 {{ contest.start_date }}
+                            </td>
+                            <td>
+                                {{ contest.end_date }}
                             </td>
                         </tr>
                     {% endfor %}
