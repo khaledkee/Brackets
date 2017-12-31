@@ -17,12 +17,12 @@ class Parser:
         "dumpregs"
     ]
     Special_Names_no_Operands = [
-        "pushad", "popad", "pushfd", "popfd", "cbw",
+         "cbw",
         "cwd", "cdq", "cld", "std", "stc", "clc", "ret", "exit"
     ]
     Special_Names_one_Operands = [
-        "call", "jmp", "neg", "inc", "dec", "loop", "push",
-        "pop", "je", "jz", "jne", "jnz", "ja", "jnbe",
+        "call", "jmp", "neg", "inc", "dec", "loop",
+        "je", "jz", "jne", "jnz", "ja", "jnbe",
         "jg", "jnle", "jae", "jnb", "jge", "jnl", "jb", "jnae",
         "jl", "jnge", "jbe", "jna", "jle", "jng", "mul", "imul",
         "div", "idiv","jc", "jnc"
@@ -818,12 +818,22 @@ class Parser:
         while (i < len(self.Code_Lines) - 1):
             if len(self.Code_Lines[i]) > 1:
                 if len(self.Code_Lines[i]) == 2:
+                    if self.Code_Lines[i][1] == 'proc':
+                        if (self.Check_is_valid(self.Code_Lines[i][0])):
+                            self.Functions_names[self.Code_Lines[i][0]] = 0
+                        else:
+                            return False
                     if self.Code_Lines[i][1] == ':':
                         if (self.Check_is_valid(self.Code_Lines[i][0]) == True):
                             self.Labels_names[self.Code_Lines[i][0]] = 0
                         else:
                             return False
                 else:
+                    if self.Code_Lines[i][1] == 'proc':
+                        if (self.Check_is_valid(self.Code_Lines[i][0])):
+                            self.Functions_names[self.Code_Lines[i][0]] = 0
+                        else:
+                            return False
                     if self.Code_Lines[i][1] == ':':
                         if (self.Check_is_valid(self.Code_Lines[i][0]) == True):
                             self.Labels_names[self.Code_Lines[i][0]] = 0
@@ -867,7 +877,7 @@ class Parser:
 
                     if len(self.Code_Lines[i]) == 2:
                         if self.Code_Lines[i][1] == 'proc':
-                            if (self.Opened_function == "") and (self.Check_is_valid(self.Code_Lines[i][0])):
+                            if (self.Opened_function == ""):
                                 self.Opened_function = self.Code_Lines[i][0]
                                 self.Functions_names[self.Code_Lines[i][0]] = self.Code_segment.__len__()
                                 self.Code_segment.append("")
@@ -912,7 +922,7 @@ class Parser:
                             self.Code_Lines[i] = self.Code_Lines[i][2:]
                             i = i - 1
                         elif self.Code_Lines[i][1] == 'proc':
-                            if (self.Opened_function == "") and (self.Check_is_valid(self.Code_Lines[i][0])):
+                            if (self.Opened_function == ""):
                                 self.Opened_function = self.Code_Lines[i][0]
                                 self.Functions_names[self.Code_Lines[i][0]] = self.Code_segment.__len__()
                                 self.Code_segment.append("")
@@ -1139,50 +1149,6 @@ class Parser:
                     elif self.Special_Names_no_Operands.__contains__(self.Code_segment[self.Registers["eip"]]):
                         if self.Code_segment[self.Registers["eip"]] == "exit":
                             return True
-                        elif self.Code_segment[self.Registers["eip"]] == "pushfd":
-                            Flags = ""
-                            for i in self.Flags:
-                                Flags += str(self.Flags[i])
-                            self.Stack_segment.append(Flags)
-                            self.Registers.update({"esp": self.Registers["esp"] + 1})
-                        elif self.Code_segment[self.Registers["eip"]] == "popfd":
-                            if (len(self.Stack_segment)>=0)and (self.Registers["esp"]>=0):
-                                Flags = self.Stack_segment[self.Registers["esp"]]
-                                self.Stack_segment=self.Stack_segment[:-1]
-                                self.Registers.update({"esp": self.Registers["esp"] - 1})
-                                try:
-                                    Flags += 0
-                                    return False
-                                except Exception:
-                                    j = 0
-                                    for i in self.Flags:
-                                        self.Flags.update({i: Flags[j]})
-                                        j += 1
-                            else:
-                                self.State = "RTE"
-                                return False
-                        elif self.Code_segment[self.Registers["eip"]] == "pushad":
-                            reg_32 = {"eax":0, "ecx": 0, "edx": 0, "ebx": 0, "esp": 0, "ebp": 0, "esi": 0, "edi": 0}
-                            for i in self.Registers:
-                                if (i.__len__() == 3)and (i!='eip'):
-                                    reg_32.update({i: self.Registers[i]})
-                            for i in reg_32:
-                                self.Stack_segment.append(reg_32[i])
-                                self.Registers.update({"esp": self.Registers["esp"] + 1})
-                        elif self.Code_segment[self.Registers["eip"]] == "popad":
-                            reg_32 = {"edi": 0, "esi": 0,"ebp": 0,"esp": 0,"ebx": 0,  "edx": 0,"ecx": 0, "eax": 0 }
-
-                            for i in reg_32:
-                                if (len(self.Stack_segment)==0)or (self.Registers["esp"]<0):
-                                    self.State = "RTE"
-                                    return False
-                                reg_32.update({i:self.Stack_segment[ self.Registers["esp"]]})
-                                self.Stack_segment = self.Stack_segment[:-1]
-                                self.Registers.update({"esp": self.Registers["esp"] - 1})
-
-                            for i in self.Registers:
-                                if (i.__len__() == 3)and (i!='eip'):
-                                    self.Registers.update({i: reg_32[i]})
                         elif self.Code_segment[self.Registers["eip"]] == "cbw":
                             a=self.Get_value_from_reg_X("al")
                             if bool(a & pow(2, (8) - 1)):
@@ -1244,9 +1210,6 @@ class Parser:
                                 return False
                         elif (self.Code_segment[self.Registers["eip"]][0] == 'div') or (self.Code_segment[self.Registers["eip"]][0] == 'idiv'):
                             if not self.Div_X(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1]):
-                                return False
-                        elif self.Code_segment[self.Registers["eip"]][0][0] == 'p':
-                            if not self.Push_Pop(self.Code_segment[self.Registers["eip"]][0],self.Code_segment[self.Registers["eip"]][1]):
                                 return False
                         elif (self.Code_segment[self.Registers["eip"]][0] == 'neg') or (self.Code_segment[self.Registers["eip"]][0] == 'inc') or (self.Code_segment[self.Registers["eip"]][0] == 'dec'):
                             if not self.Neg_inc_dec(self.Code_segment[self.Registers["eip"]][0], self.Code_segment[self.Registers["eip"]][1]):
@@ -1425,6 +1388,7 @@ class Parser:
                 return True
             return False
         elif String == "loop":
+
             self.Neg_inc_dec('dec', [['ecx']])
             if self.Flags["zf"] == 1:
                 return False
@@ -1448,7 +1412,6 @@ class Parser:
             False if there where syntax error
             List contains 'name ,value ,type'
         """
-
         reg_16_8 = ["ax", "bx", "cx", "dx","ax", "bx", "cx", "dx","al", "ah", "bl", "bh", "ch", "cl", "dh", "dl"]
         if len(Operand) == 1:
             if Operand[0] in self.Data_variables:
@@ -1489,6 +1452,7 @@ class Parser:
                 except Exception:
                     return False
         else:
+
             name = ""
             type = 0
             if Operand.__len__() > 1:
@@ -1508,6 +1472,8 @@ class Parser:
                     Operand.append('+')
                     name = "add"
                     type = 0
+                    if (Operand[0] == 'ptr_X_'):
+                        type=self.Type(self.Data_variables[Operand[1]][1])
                     Operand = Operand[1:]
                 else:
                     name = "imm"
@@ -1626,7 +1592,7 @@ class Parser:
             False by set state to "RTE" if there where memory out of range
             True if is no problem
         """
-        if (address < self.Memory_data_segment.__len__()) and (address + type <= self.Memory_data_segment.__len__()):
+        if (address <= self.Memory_data_segment.__len__()) and (address + type-1 <= self.Memory_data_segment.__len__()):
 
             tmp = str(hex(value))[2:]
             if tmp.__len__() > (type * 2):
@@ -1662,7 +1628,10 @@ class Parser:
         if tmp1 is False or tmp2 is False:
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            return False
+            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+                tmp1[2]=tmp2[2]
+            else:
+                return False
 
         if String == 'mov':
             if ((tmp1[0] == 'add') and (tmp2[0] == 'add')) or ((tmp1[2] != tmp2[2]) and (tmp2[2] != 0) and (tmp2[0] != 'imm')):
@@ -1763,7 +1732,10 @@ class Parser:
         if (tmp1 is False) or (tmp2 is False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            return False
+            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+                tmp1[2]=tmp2[2]
+            else:
+                return False
         if ((tmp1[0] == 'add') and (tmp2[0] == 'add')) or ((tmp1[2] != tmp2[2]) and (tmp2[2] != 0) and (tmp2[0] != 'imm')):
             return False
 
@@ -2068,10 +2040,14 @@ class Parser:
 
         tmp1 = self.Check_code_operand(infix[0])
         tmp2 = self.Check_code_operand(infix[1])
+
         if (tmp1 == False) or (tmp2 == False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            return False
+            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+                tmp1[2]=tmp2[2]
+            else:
+                return False
         if ((tmp1[0] == 'add') and (tmp2[0] == 'add')) or (
                 (tmp1[2] != tmp2[2]) and (tmp2[2] != 0) and (tmp2[0] != 'imm')):
             return False
@@ -2158,7 +2134,10 @@ class Parser:
         if (tmp1 == False) or (tmp2 == False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            return False
+            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+                tmp1[2]=tmp2[2]
+            else:
+                return False
         if ((tmp1[0] == 'add') and (tmp2[0] == 'add')) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')) or ((tmp1[2] != tmp2[2]) and (tmp2[2] != 0)):
             return False
 
@@ -2808,51 +2787,10 @@ class Parser:
                     return False
                 self.Input_File_index += 1
                 if self.Input_File[self.Input_File_index] == "\n":
+                    self.Input_File_index += 1
                     break
                 edx += 1
                 ecx -= 1
-        return True
-
-    def Push_Pop(self, String, infix):
-
-        """
-                                    This function start some operations on code
-                                    make neg inc dec instructions
-
-                                    Return :
-                                    False if there where syntax error
-                                    True if there where no syntax error
-        """
-
-        tmp1 = self.Check_code_operand(infix[0])
-        if not tmp1:
-            return False
-        if (tmp1[2] == 1) or (tmp1[2] == 0):
-            return False
-        if String=="push":
-            a = 0
-            if tmp1[0] != 'add':
-                a = tmp1[1]
-            else:
-                a = self.Get_value_from_memory(tmp1[1], tmp1[2])
-            self.Stack_segment.append(a)
-            self.Registers.update({"esp": self.Registers["esp"] + 1})
-        elif String=="pop":
-            if (len(self.Stack_segment) == 0) or (self.Registers["esp"] < 0):
-                self.State = "RTE"
-                return False
-            a=self.Stack_segment[self.Registers["esp"]]
-            self.Registers.update({"esp": self.Registers["esp"] - 1})
-            if tmp1[0] == 'reg':
-                if len(infix[0][0]) == 3:
-                    self.Registers[infix[0][0]] = a
-                else:
-                    self.Save_value_in_reg_X(infix[0][0], a)
-            else:
-                if not self.Save_value_in_memory(tmp1[1], a, tmp1[2]):
-                    return False
-        else:
-            return False
         return True
 
     def Mul_X(self, String, infix):
@@ -3248,7 +3186,10 @@ class Parser:
         if (tmp1 is False) or (tmp2 is False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            return False
+            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+                tmp1[2]=tmp2[2]
+            else:
+                return False
         if ((tmp1[0] == 'add') and (tmp2[0] == 'add')) or ((tmp1[2] != tmp2[2]) and (tmp2[2] != 0) and (tmp2[0] != 'imm')):
             return False
 
