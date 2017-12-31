@@ -294,6 +294,7 @@ class Parser:
 
         var_type_len = []  # (adress,data_type,size)
         if not Comma:
+
             if not self.Check_is_valid(Line[0]):
                 if (Line[0] in self.Data_types) and (len(Line) > 1):
                     infix = self.postfix(Line[1:])
@@ -321,14 +322,18 @@ class Parser:
                         var_type_len.append(self.Memory_data_segment.__len__())
                         var_type_len.append(Line[1])
                         var_type_len.append(0)
+                        self.Data_variables[Line[0]] = var_type_len
                         infix = self.postfix(Line[2:])
+
                         if infix:
                             if Line[Line.__len__() - 1] == ',':
                                 Comma = True
                             tmp_memory = []
                             for i in range(0, len(infix)):
                                 tmp = self.Calc_infix(infix[i])
+
                                 if  (tmp!=False):
+                                    self.Data_variables[Line[0]][2]+=1
                                     tmp_memory.append(tmp)
                                 else:
                                     return 0
@@ -353,9 +358,11 @@ class Parser:
                 else:
                     Comma = False
                 tmp_memory = []
+                V = sorted(self.Data_variables.keys())[-1]
                 for i in range(0, len(infix)):
                     tmp = self.Calc_infix(infix[i])
                     if (tmp != False):
+                        self.Data_variables[V][2]+=1
                         tmp_memory.append(tmp)
                     else:
                         return 0
@@ -697,6 +704,9 @@ class Parser:
                     stak.append(0)
                 else:
                     tmp = self.Check_is_valid_data(infix[i])
+                    if self.Data_types.__contains__(infix[i]):
+                        stak.append(self.Type(infix[i]))
+                        continue
                     if tmp == -1:
                         return False
                     else:
