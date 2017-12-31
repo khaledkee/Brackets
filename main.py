@@ -7,24 +7,32 @@ a byte 2,20
  word   lengthof a +1 dup(25),
         30+3,0
 .code
-F proc
-cmp eax,0
-je E
 
 
-call writeint
+F proc 
+pushad
+
+mov eax,2
+mov ebx,33
+mov ecx,00
+call dumpregs
 call crlf
-dec eax
-call F
-
-E:
+popad
 ret
 F endp
 
 main proc
-    mov eax, "20," + 30
-    call writeint
-	;call F
+    mov eax,51
+sub eax,51
+call dumpregs
+call crlf
+mov eax, 51
+sub eax, 101
+call dumpregs
+call crlf
+mov eax, 51
+sub eax, 2
+call dumpregs
 	exit
 main endp
 end main
@@ -53,6 +61,7 @@ print("Instructions",P.Instructions)
 print("Code_segment",P.Code_segment)
 print("State",P.State)
 print("Output_File",P.Output_File)
+#print(A)
 
 
 
