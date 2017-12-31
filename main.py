@@ -22,16 +22,9 @@ ret
 F endp
 
 main proc
-    mov eax,51
-sub eax,51
-call dumpregs
-call crlf
-mov eax, 51
-sub eax, 101
-call dumpregs
-call crlf
-mov eax, 51
-sub eax, 2
+    mov eax,50
+    mov bl,20
+    mul bl
 call dumpregs
 	exit
 main endp
