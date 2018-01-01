@@ -30,7 +30,7 @@
     <body class="container">
         {% load static %}
         <div class="row">
-            <a class="col-3" href="/contests"><img src="{% static 'img/logo.jpg' %}"/></a>
+            <a class="col-3" href="{% url 'contests' %}"><img src="{% static 'img/logo.jpg' %}"/></a>
             <div class="offset-6 col-3">
                 {% if not user.is_authenticated %}<a  href="{% url 'login' %}">login</a>{% endif %}
                 {% if user.is_authenticated %}{{ user.username }} <a  href="{% url 'logout' %}">logout</a>{% endif %}

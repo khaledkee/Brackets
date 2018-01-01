@@ -7,6 +7,7 @@ from django.conf import settings
 from .models import problem, submission, contest, userinfo
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .judge import start_judge
+from django.db.models import Q
 
 
 # Create your views here.
@@ -48,7 +49,7 @@ def getSubmitView(request, problem_id, contest_id=None):
 
 def postSubmitView(request, problem_id=None, contest_id=None):
     if problem_id is not None:
-        current_problem = get_object_or_404(problem, id=problem_id)
+        current_problem = get_object_or_404(problem, id=problem_id,  start_date__lte=datetime.now())
         if contest_id is not None and current_problem.contest_id != contest_id:
             return HttpResponseBadRequest('Your request is bad and you should feel bad!')
     else:
@@ -84,7 +85,7 @@ def submitView(request, problem_id=None, contest_id=None):
 
 def submissionView(request, page_id=1, contest_id=None, user_id=None):
     if contest_id is not None:
-        contestObj = get_object_or_404(contest, id=contest_id)
+        contestObj = get_object_or_404(contest, id=contest_id, start_date__lte=datetime.now())
         if user_id is None:
             submissions_list = submission.objects.filter(problem__contest__id=contest_id)
         else:
@@ -110,7 +111,7 @@ def submissionView(request, page_id=1, contest_id=None, user_id=None):
 
 
 def dashboardView(request, contest_id):
-    current_contest = get_object_or_404(contest, id=contest_id)
+    current_contest = get_object_or_404(contest, id=contest_id, start_date__lte=datetime.now())
     problems = current_contest.problem_set.all()
     try:
         return render(request, 'dashboard.html', {'contest': current_contest, 'problems': problems})
@@ -119,7 +120,7 @@ def dashboardView(request, contest_id):
 
 
 def problemsView(request):
-    problems = problem.objects.all()
+    problems = problem.objects.filter(Q(contest=None) | Q(contest__start_date__lte=datetime.now()))
     try:
         return render(request, 'problems.html', {'problems': problems})
     except:
@@ -139,8 +140,10 @@ def get_acs(user_dict):
         num_ac += 1 if score > 0 else 0
     return num_ac
 
+
 def sort_on_acs(user_dict):
     return user_dict[1]['bracketsscore']
+
 
 def scoreboardView(request, contest_id):
     current_contest = get_object_or_404(contest,id = contest_id)
@@ -165,3 +168,5 @@ def scoreboardView(request, contest_id):
         return render(request, 'scoreboard.html', {'contest': current_contest, 'problems': problems, 'scoreboard': users_dict})
     except:
         return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+    
+    

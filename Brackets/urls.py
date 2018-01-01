@@ -36,4 +36,5 @@ urlpatterns = [
     path('contest/<int:contest_id>/problem/<int:problem_id>/submit', views.submitView, name='submit'),
     re_path(r'^contest/(?P<contest_id>\d+)/submissions/?(?P<page_id>\d+)?$', views.submissionView, name='submissions'),
     re_path(r'^contest/(?P<contest_id>\d+)/user/(?P<user_id>\d+)/submissions/?(?P<page_id>\d+)?$', views.submissionView, name='submissions'),
+    re_path(r'^.*$', views.contestsView, name="otherwise")
 ]
