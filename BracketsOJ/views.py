@@ -48,8 +48,8 @@ def getSubmitView(request, problem_id, contest_id=None):
 
 def postSubmitView(request, problem_id=None, contest_id=None):
     if problem_id is not None:
-        current_problem = get_object_or_404(problem, id=problem_id,  start_date__lte=datetime.now())
-        if contest_id is not None and current_problem.contest_id != contest_id:
+        current_problem = get_object_or_404(problem, id=problem_id)
+        if contest_id is not None and (current_problem.contest_id != contest_id or contest.start_date > datetime.now()):
             return HttpResponseBadRequest('Your request is bad and you should feel bad!')
     else:
         current_problem = {'id': 0, 'title': 'Custom test', 'time_limit': 100, 'memory_limit': 64}
