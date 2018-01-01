@@ -441,29 +441,29 @@ class Parser:
         infix = []
         i=0
         while( i <(len(Line))):
-            if (Line[i] == '(') | (Line[i] == '['):
+            if (Line[i] == '(') or (Line[i] == '['):
                 if len(stak) > 0:
-                    if (Line[i] == '[') & ((stak[len(stak) - 1] == "lengthof") | (stak[len(stak) - 1] == "dup") | (stak[len(stak) - 1] == "sizeof") | (stak[len(stak) - 1] == "type")):
+                    if (Line[i] == '[') and ((stak[len(stak) - 1] == "lengthof") or (stak[len(stak) - 1] == "dup") or (stak[len(stak) - 1] == "sizeof") or (stak[len(stak) - 1] == "type")):
                         return False
                 if len(stak) > 0:
-                    if (Line[i] == '(') & ((stak[len(stak) - 1] == "lengthof") | (stak[len(stak) - 1] == "sizeof")):
+                    if (Line[i] == '(') and ((stak[len(stak) - 1] == "lengthof") or (stak[len(stak) - 1] == "sizeof")):
                         return False
-                if (len(stak) == 0) & (Line[i] == '('):
+                if (len(stak) == 0) and (Line[i] == '('):
                     return False
                 stak.append(Line[i])
-            elif (Line[i] == ')') | (Line[i] == ']'):
+            elif (Line[i] == ')') or (Line[i] == ']'):
                 if len(stak) == 0:
                     return False
 
                 j = len(stak) - 1
                 while j >= 0:
-                    if (stak[j] == '(') & (Line[i] == ')'):
+                    if (stak[j] == '(') and (Line[i] == ')'):
                         break
-                    elif (stak[j] == '(') & (Line[i] == ']'):
+                    elif (stak[j] == '(') and (Line[i] == ']'):
                         return False
-                    elif (stak[j] == '[') & (Line[i] == ')'):
+                    elif (stak[j] == '[') and (Line[i] == ')'):
                         return False
-                    elif (stak[j] == '[') & (Line[i] == ']'):
+                    elif (stak[j] == '[') and (Line[i] == ']'):
                         break
                     expression.append(stak[j])
                     stak = stak[:-1]
@@ -484,7 +484,7 @@ class Parser:
                         expression.append(stak[j])
                         stak = stak[:-1]
                         j = j - 1
-                if (expression.__len__() > 0)&(expression!=["dup"]):
+                if (expression.__len__() > 0)and(expression!=["dup"]):
                     infix.append(expression)
                 expression = []
             elif Line[i][0].isdecimal():
@@ -511,7 +511,7 @@ class Parser:
                     expression.append(int(Line[i]))
                 else:
                     return False
-            elif (Line[i] == "lengthof") | (Line[i] == "sizeof") | (Line[i] == "type") | (Line[i] == "dup"):
+            elif (Line[i] == "lengthof") or (Line[i] == "sizeof") or (Line[i] == "type") or (Line[i] == "dup"):
                 if (Line[i] == "dup"):
                     if stak.__len__()>0:
                         j = stak.__len__() - 1
@@ -523,20 +523,20 @@ class Parser:
                     L = []
                     i = 1 + i
                     while (i < len(Line)):
-                        if (Line[i] == '(') | (Line[i] == '['):
+                        if (Line[i] == '(') or (Line[i] == '['):
                             S.append(Line[i])
-                        elif (Line[i] == ')') | (Line[i] == ']'):
+                        elif (Line[i] == ')') or (Line[i] == ']'):
                             if len(S) == 0:
                                 return False
                             j = len(S) - 1
                             while j >= 0:
-                                if (S[j] == '(') & (Line[i] == ')'):
+                                if (S[j] == '(') and (Line[i] == ')'):
                                     break
-                                elif (S[j] == '(') & (Line[i] == ']'):
+                                elif (S[j] == '(') and (Line[i] == ']'):
                                     return False
-                                elif (S[j] == '[') & (Line[i] == ')'):
+                                elif (S[j] == '[') and (Line[i] == ')'):
                                     return False
-                                elif (S[j] == '[') & (Line[i] == ']'):
+                                elif (S[j] == '[') and (Line[i] == ']'):
                                     break
                                 S = S[:-1]
                                 j = j - 1
@@ -601,13 +601,13 @@ class Parser:
 
         j = len(stak) - 1
         while j >= 0:
-            if (stak[j] == '(') | (stak[j] == '['):
+            if (stak[j] == '(') or (stak[j] == '['):
                 return False
             expression.append(stak[j])
             stak = stak[:-1]
             j = j - 1
 
-        if (expression.__len__() > 0)&(expression!=["dup"]):
+        if (expression.__len__() > 0)and(expression!=["dup"]):
             infix.append(expression)
         return infix
 
@@ -1296,10 +1296,6 @@ class Parser:
             return (self.Registers[tmp]&((pow(2,8)-1)*pow(2,8)))
         else:
             return (self.Registers[tmp] & (pow(2, 16) - 1))
-
-
-
-
 
     def Save_value_in_reg_X(self, string,val):
 
@@ -2780,7 +2776,7 @@ class Parser:
                 self.Input_File_index += 1
 
             a=num[1:]
-            if ((num.isdecimal() == True) or ((a.isdecimal() == True) & ((num[0] == '-') | num[0] == '+'))):
+            if ((num.isdecimal() == True) or ((a.isdecimal() == True) and ((num[0] == '-') or num[0] == '+'))):
                 self.Registers["eax"] = int(num)
             else:
 
