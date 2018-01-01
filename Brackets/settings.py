@@ -25,7 +25,7 @@ SECRET_KEY = 'q=71di$_-@=5@4dv!z@2a5t!kd8z44+1d9(lod8c5t8@jiujc_'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['guarded-ocean-32592.herokuapp.com', '127.0.0.1', 'www.curly-brackets.tech']
 
 
 # Application definition

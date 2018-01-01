@@ -49,7 +49,8 @@ class submission(models.Model):
         ('WA', 'Wrong Answer'),
         ('RTE', 'Run Time Error'),
         ('QU', 'In queue'),
-        ('CE', 'Syntax error')
+        ('CE', 'Syntax error'),
+        ('FJ', 'Failed to judge')
     ]
     status = models.CharField(max_length=50, choices=STATUSES, null=True,blank=True)
     code = models.TextField(default="")
