@@ -41,9 +41,9 @@ class asyncJudge(Thread):
                 while len(file_name) < 3 :
                     file_name = '0' + file_name
                 file_name = 'test' + file_name
-                if os.path.isfile(settings.STATIC_ROOT + '\\problems\\' + str(problem.id) + '\\'+ file_name+'.in'):
+                if os.path.isfile(settings.STATIC_ROOT + '/problems/' + str(problem.id) + '/'+ file_name+'.in'):
                     with open(os.path.join(settings.STATIC_ROOT,
-                                           'problems\\' + str(problem.id) + '\\'+ file_name+'.in')) as input_file:
+                                           'problems/' + str(problem.id) + '/'+ file_name+'.in')) as input_file:
                         input_stream = ''.join(input_file.readlines())
 
                         new_parser = parser.Parser(code, tl, ml, input_stream)
@@ -63,7 +63,7 @@ class asyncJudge(Thread):
                             self.submission.status = 'CE'
                             break
                         with open(os.path.join(settings.STATIC_ROOT,
-                                               'problems\\' + str(problem.id) + '\\' + file_name + '.out')) as output_file:
+                                               'problems/' + str(problem.id) + '/' + file_name + '.out')) as output_file:
                             ans = ''.join(output_file.readlines())
                             if checker(input_stream, ans, verdict[2]):
                                 self.submission.status = 'AC'
