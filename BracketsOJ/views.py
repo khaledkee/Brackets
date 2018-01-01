@@ -56,7 +56,7 @@ def postSubmitView(request, problem_id=None, contest_id=None):
     source_code = request.POST.get("source", "")
     if source_code is None or len(source_code) > 5000:
         return HttpResponseBadRequest('Your request is bad and you should feel bad!')
-    current_userinfo = get_object_or_404(userinfo, UserModel__id=request.user.id)
+    current_userinfo, created = userinfo.objects.get_or_create(UserModel_id=request.user.id)
     not_judges_submissions = len(submission.objects.filter(status='QU', user__id=request.user.id))
     if not_judges_submissions >= 5 or (current_userinfo.last_submit is not None and (
             current_userinfo.last_submit - datetime.now()).total_seconds() > -30):

@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 # Create your models here.
 class userinfo(models.Model):
     UserModel = models.ForeignKey(User,on_delete=models.CASCADE)
-    rate = models.IntegerField()
     last_submit = models.DateTimeField(blank=True,null=True)
     def __str__(self):
         return self.UserModel.username
