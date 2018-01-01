@@ -29,12 +29,12 @@ urlpatterns = [
     path('problem/<int:problem_id>', views.problemView, name='problem'),
     path('problem/<int:problem_id>/submit', views.submitView, name='submit'),
     re_path(r'^submissions/?(?P<page_id>\d+)?$', views.submissionView, name='submissions'),
-    re_path(r'^user/(?P<user_id>\d+)/submissions/(?P<page_id>\d+)?$', views.submissionView, name='submissions'),
+    re_path(r'^user/(?P<user_id>\d+)/submissions/?(?P<page_id>\d+)?$', views.submissionView, name='submissions'),
     re_path('^contest/(?P<contest_id>\d+)/?$', views.dashboardView, name='dashboard'),
     path('contest/<int:contest_id>/problem/<int:problem_id>', views.problemView, name='problem'),
     re_path(r'^contest/(?P<contest_id>\d+)/scoreboard/?$', views.scoreboardView, name='scoreboard'),
     path('contest/<int:contest_id>/problem/<int:problem_id>/submit', views.submitView, name='submit'),
     re_path(r'^contest/(?P<contest_id>\d+)/submissions/?(?P<page_id>\d+)?$', views.submissionView, name='submissions'),
     re_path(r'^contest/(?P<contest_id>\d+)/user/(?P<user_id>\d+)/submissions/?(?P<page_id>\d+)?$', views.submissionView, name='submissions'),
-    re_path(r'^.*$', views.contestsView, name="otherwise")
+    re_path(r'', views.contestsView, name="otherwise")
 ]
