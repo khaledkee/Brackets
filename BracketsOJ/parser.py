@@ -1,6 +1,5 @@
-#from BracketsOJ \
-import extra_functions
-#import string
+from BracketsOJ import extra_functions
+import string
 
 class Parser:
     Special_Symbols = "~!@#$%^&*()+=/-,{}<:>?[]\|"
@@ -36,6 +35,7 @@ class Parser:
 
     def __init__(self, Code, Max_Instructions, Max_Memory, Input_File):
         self.Input_File = Input_File
+        Code = Code + '\n'
         Code = Code.replace('\t', '   ')
         Code = Code.replace('\r', '')
         self.Code_Lines = []
