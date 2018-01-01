@@ -66,12 +66,13 @@
         </div>
         <div>
             <p>Sample</p>
+            {% load space %}
             {% for sample in samples %}
                 <p class="problem-text">Input</p>
                 <div class="sample-text">
                     <button class="btn btn-secondary copy-btn">Copy</button>
                     {% for line in sample.input %}
-                        {{ line }}
+                        {{ line|spacify }}
                         <br>
                     {% endfor %}
                 </div>
@@ -79,7 +80,7 @@
                 <div class="sample-text">
                     <button class="btn btn-secondary copy-btn">Copy</button>
                     {% for line in sample.output %}
-                        {{ line }}
+                        {{ line|spacify }}
                         <br>
                     {% endfor %}
                 </div>

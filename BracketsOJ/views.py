@@ -21,7 +21,6 @@ def problemView(request, problem_id, contest_id=None):
             while len(file_name) < 3:
                 file_name = '0' + file_name
             file_name = 'test' + file_name
-            print(settings.STATIC_ROOT + 'problems\\' + str(problem_id) + '\\' + file_name + '.in')
             with open(settings.STATIC_ROOT + '/problems/' + str(problem_id) + '/' + file_name + '.in') as input_file:
                 sample_input = input_file.readlines()
             with open(settings.STATIC_ROOT + '/problems/' + str(problem_id) + '/' + file_name + '.out') as output_file:
