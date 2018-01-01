@@ -57,13 +57,14 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% load tz %}
                     {% for submission in submissions %}
                         <tr>
                             <td>
-                                {{ submission.submitted }}
+                                {{ submission.submitted|localtime }}
                             </td>
                             <td>
-                                {{ submission.judged }}
+                                {{ submission.judged|localtime }}
                             </td>
                             <td>
                                 {{ submission.user }}

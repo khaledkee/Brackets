@@ -29,16 +29,17 @@ Contests
                         </tr>
                     </thead>
                     <tbody class="problem-text">
+                    {% load tz %}
                     {% for contest in contests %}
                         <tr>
                             <td colspan="2">
                                 <a href="{% url 'dashboard' contest_id=contest.id %}">{{ contest.name }}</a>
                             </td>
                             <td>
-                                {{ contest.start_date }}
+                                {{ contest.start_date|localtime }}
                             </td>
                             <td>
-                                {{ contest.end_date }}
+                                {{ contest.end_date|localtime }}
                             </td>
                         </tr>
                     {% endfor %}

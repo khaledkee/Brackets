@@ -45,13 +45,13 @@
                                 {{ user_score.bracketsscore }}
                             </td>
                             {% for problem in problems %}
-                                <td>
+                                <td style="text-align: center">
                                     {% if problem.title not in user_score %}
                                         0
                                     {% else %}
                                         {% for problem_name, problem_score in user_score.items %}
                                             {% if problem_name == problem.title %}
-                                                {{ problem_score }}
+                                                {% if problem_score > 0 %}+{% endif %}{{ problem_score }}
                                             {% endif %}
                                         {% endfor %}
                                     {% endif %}

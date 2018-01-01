@@ -59,8 +59,8 @@ def postSubmitView(request, problem_id=None, contest_id=None):
         raise SuspiciousOperation()
     current_userinfo, created = userinfo.objects.get_or_create(UserModel_id=request.user.id)
     not_judges_submissions = len(submission.objects.filter(status='QU', user__id=request.user.id))
-    if not_judges_submissions >= 5 or (current_userinfo.last_submit is not None and (
-            current_userinfo.last_submit - datetime.now()).total_seconds() > -15):
+    if not_judges_submissions >= 5 or (current_userinfo.last_submit is not None and abs((
+            current_userinfo.last_submit - datetime.now()).total_seconds()) <= 15):
         raise SuspiciousOperation()
     current_userinfo.last_submit = datetime.now()
     current_userinfo.save()
