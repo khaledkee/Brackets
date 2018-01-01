@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from django.shortcuts import render, get_object_or_404, get_list_or_404, redirect
 from django.http import HttpResponseBadRequest
+from django.core.exceptions import SuspiciousOperation
 from django.conf import settings
 from .models import problem, submission, contest, userinfo
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -29,38 +30,38 @@ def problemView(request, problem_id, contest_id=None):
         context = {'problem': current_problem, 'samples': samples}
         return render(request, 'problem.html', context)
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
 
 
 def getSubmitView(request, problem_id, contest_id=None):
     if problem_id is not None:
         current_problem = get_object_or_404(problem, id=problem_id)
         if contest_id is not None and current_problem.contest_id != contest_id:
-            return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+            raise SuspiciousOperation()
     else:
         current_problem = {'id': 0, 'title': 'Custom test', 'time_limit': 100, 'memory_limit': 64}
     context = {'problem': current_problem}
     try:
         return render(request, 'submit.html', context)
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
 
 
 def postSubmitView(request, problem_id=None, contest_id=None):
     if problem_id is not None:
         current_problem = get_object_or_404(problem, id=problem_id)
         if contest_id is not None and (current_problem.contest_id != contest_id or contest.start_date > datetime.now()):
-            return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+            raise SuspiciousOperation()
     else:
         current_problem = {'id': 0, 'title': 'Custom test', 'time_limit': 100, 'memory_limit': 64}
     source_code = request.POST.get("source", "")
     if source_code is None or len(source_code) > 5000:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
     current_userinfo, created = userinfo.objects.get_or_create(UserModel_id=request.user.id)
     not_judges_submissions = len(submission.objects.filter(status='QU', user__id=request.user.id))
     if not_judges_submissions >= 5 or (current_userinfo.last_submit is not None and (
-            current_userinfo.last_submit - datetime.now()).total_seconds() > -30):
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+            current_userinfo.last_submit - datetime.now()).total_seconds() > -15):
+        raise SuspiciousOperation()
     current_userinfo.last_submit = datetime.now()
     current_userinfo.save()
     new_submission = submission.objects.create(user_id=request.user.id, problem_id=problem_id, status='QU',
@@ -71,7 +72,7 @@ def postSubmitView(request, problem_id=None, contest_id=None):
         return redirect(('%s/user/' + str(request.user.id) + '/submissions') % (
         '/contest/' + str(contest_id) if contest_id is not None else ''))
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
 
 
 def submitView(request, problem_id=None, contest_id=None):
@@ -106,7 +107,7 @@ def submissionView(request, page_id=1, contest_id=None, user_id=None):
             submissions_list = paginator.page(paginator.num_pages)
         return render(request, 'submissions.html', {'submissions': submissions_list, 'contest': contestObj})
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
 
 
 def dashboardView(request, contest_id):
@@ -115,7 +116,7 @@ def dashboardView(request, contest_id):
     try:
         return render(request, 'dashboard.html', {'contest': current_contest, 'problems': problems})
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
 
 
 def problemsView(request):
@@ -123,7 +124,7 @@ def problemsView(request):
     try:
         return render(request, 'problems.html', {'problems': problems})
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
 
 
 def contestsView(request):
@@ -131,7 +132,7 @@ def contestsView(request):
     try:
         return render(request, 'contests.html', {'contests': contests})
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
 
 def get_acs(user_dict):
     num_ac = 0
@@ -166,6 +167,6 @@ def scoreboardView(request, contest_id):
     try:
         return render(request, 'scoreboard.html', {'contest': current_contest, 'problems': problems, 'scoreboard': users_dict})
     except:
-        return HttpResponseBadRequest('Your request is bad and you should feel bad!')
+        raise SuspiciousOperation()
     
     

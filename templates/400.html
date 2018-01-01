@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}
+    Bad request
+{% endblock %}
+{% block content %}
+    {% load static %}
+    <div>
+        <nav class="row nav problem-text">
+            <a class="nav-link" href="/contests">Contests</a>
+            <a class="nav-link" href="/problems">Problems</a>
+{#                <a class="nav-link" href="/customtest">Custom Test</a>#}
+        </nav>
+    </div>
+    <div class="m-auto offset-3 col-5">
+        <img src="{% static "img/Bad request.jpg" %}">
+    </div>
+{% endblock %}
