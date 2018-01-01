@@ -22,6 +22,7 @@ admin.autodiscover()
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', auth_views.login, {'template_name': 'login.html'}, name='login'),
+    re_path(r'login', auth_views.login, {'template_name': 'login.html'}, name='loginre'),
     path('logout/', auth_views.logout, {'template_name': 'logout.html'}, name='logout'),
     # path('customtest', views.submitView, name='customtest'),
     re_path(r'problems/?', views.problemsView, name='problems'),
