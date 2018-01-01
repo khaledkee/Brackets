@@ -322,6 +322,7 @@ class Parser:
                         var_type_len.append(self.Memory_data_segment.__len__())
                         var_type_len.append(Line[1])
                         var_type_len.append(0)
+                        a=self.Type(Line[1])
                         self.Data_variables[Line[0]] = var_type_len
                         infix = self.postfix(Line[2:])
 
@@ -333,7 +334,7 @@ class Parser:
                                 tmp = self.Calc_infix(infix[i])
 
                                 if  (tmp!=False):
-                                    self.Data_variables[Line[0]][2]+=1
+                                    self.Data_variables[Line[0]][2]+=a
                                     tmp_memory.append(tmp)
                                 else:
                                     return 0
@@ -358,11 +359,9 @@ class Parser:
                 else:
                     Comma = False
                 tmp_memory = []
-                V = sorted(self.Data_variables.keys())[-1]
                 for i in range(0, len(infix)):
                     tmp = self.Calc_infix(infix[i])
                     if (tmp != False):
-                        self.Data_variables[V][2]+=1
                         tmp_memory.append(tmp)
                     else:
                         return 0
