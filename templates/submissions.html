@@ -82,11 +82,11 @@
                                 {{ submission.memory }}
                             </td>
                             <td>
-                                {% if user.id == submission.user.id %}
+{#                                {% if user.id == submission.user.id %}#}
                                     <button data-source="{{ submission.code }}" data-id="{{ submission.id }}" class="view-code btn btn-primary" type="button" data-toggle="modal" data-target="#codeModal">
                                         View Code
                                     </button>
-                                {% endif %}
+{#                                {% endif %}#}
                             </td>
                         </tr>
                     {% endfor %}

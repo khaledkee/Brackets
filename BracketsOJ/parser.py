@@ -2780,24 +2780,22 @@ class Parser:
                 self.Registers["eax"] = int(num)
             else:
                 return False
-        elif String == "readint":
-
+        elif (String == "readint"):
             num = ""
-
             while (self.Input_File_index < len(self.Input_File)):
                 if self.Input_File[self.Input_File_index] == "\n":
                     self.Input_File_index += 1
                     break
                 num += self.Input_File[self.Input_File_index]
                 self.Input_File_index += 1
-
             a = num[1:]
             if ((num.isdecimal() == True) or ((a.isdecimal() == True) and ((num[0] == '-') or num[0] == '+'))):
                 self.Registers["eax"] = int(num)
+                if bool(self.Registers["eax"] & pow(2, (4 * 8) - 1)) is True:
+                    a = self.Registers["eax"]
+                    self.Registers["eax"] = pow(2, (4 * 8)) + a
             else:
-
                 return False
-
 
         elif String == "readchar":
             if (self.Input_File_index < len(self.Input_File)):

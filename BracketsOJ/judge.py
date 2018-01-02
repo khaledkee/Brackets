@@ -62,6 +62,9 @@ class asyncJudge(Thread):
                         elif verdict is False:
                             self.submission.status = 'CE'
                             break
+                        elif verdict == 'RTE':
+                            self.submission.status = 'RTE'
+                            break
                         with open(os.path.join(settings.STATIC_ROOT,
                                                'problems/' + str(problem.id) + '/' + file_name + '.out')) as output_file:
                             ans = ''.join(output_file.readlines())
