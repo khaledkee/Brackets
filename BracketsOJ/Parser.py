@@ -108,6 +108,8 @@ class Parser:
                                     return self.State
                                 return False
                             else:
+                                if self.State != "":
+                                    return self.State
                                 return [self.Instructions, len(self.Memory_data_segment) + len(self.Stack_segment),
                                         self.Output_File]
             else:
