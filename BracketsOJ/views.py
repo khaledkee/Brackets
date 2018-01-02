@@ -42,7 +42,6 @@ def getSubmitView(request, current_problem):
 
 
 def postSubmitView(request, current_problem):
-    raise SuspiciousOperation()
     source_code = request.POST.get("source", "")
     if source_code is None or len(source_code) > 5000:
         raise SuspiciousOperation()
