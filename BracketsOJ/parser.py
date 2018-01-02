@@ -2769,7 +2769,7 @@ class Parser:
                 c = self.Get_value_from_memory(self.Registers["edx"] + i, 1)
 
             self.Output_File += s
-        elif String == "readint":
+        elif String == "readdec":
             num = ""
             while (self.Input_File_index < len(self.Input_File)):
                 if self.Input_File[self.Input_File_index] == "\n":
@@ -2781,7 +2781,7 @@ class Parser:
                 self.Registers["eax"] = int(num)
             else:
                 return False
-        elif String == "readdec":
+        elif String == "readint":
 
             num = ""
 
@@ -2792,7 +2792,7 @@ class Parser:
                 num += self.Input_File[self.Input_File_index]
                 self.Input_File_index += 1
 
-            a=num[1:]
+            a = num[1:]
             if ((num.isdecimal() == True) or ((a.isdecimal() == True) and ((num[0] == '-') or num[0] == '+'))):
                 self.Registers["eax"] = int(num)
             else:
