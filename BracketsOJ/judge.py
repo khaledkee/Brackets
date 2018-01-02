@@ -52,7 +52,7 @@ class asyncJudge(Thread):
                         except:
                             verdict = False
                         self.submission.time = max(self.submission.time, new_parser.Instructions)
-                        self.submission.memory = max(self.submission.time, len(new_parser.Memory_data_segment) + len(new_parser.Code_segment))
+                        self.submission.memory = max(self.submission.memory, len(new_parser.Memory_data_segment) + len(new_parser.Code_segment))
                         if verdict == 'TL':
                             self.submission.status = 'TL'
                             break

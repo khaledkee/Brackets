@@ -1,8 +1,7 @@
 import os
 
 from datetime import datetime
-from django.shortcuts import render, get_object_or_404, get_list_or_404, redirect
-from django.http import HttpResponseBadRequest
+from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import SuspiciousOperation
 from django.conf import settings
 from .models import problem, submission, contest, userinfo
@@ -14,6 +13,8 @@ from django.db.models import Q
 # Create your views here.
 def problemView(request, problem_id, contest_id=None):
     current_problem = get_object_or_404(problem, id=problem_id)
+    if contest_id is not None and current_problem.contest_id != contest_id:
+        raise SuspiciousOperation()
     samples = []
     try:
         for i in range(1, current_problem.samples + 1):
@@ -32,13 +33,7 @@ def problemView(request, problem_id, contest_id=None):
         raise SuspiciousOperation()
 
 
-def getSubmitView(request, problem_id, contest_id=None):
-    if problem_id is not None:
-        current_problem = get_object_or_404(problem, id=problem_id)
-        if contest_id is not None and current_problem.contest_id != contest_id:
-            raise SuspiciousOperation()
-    else:
-        current_problem = {'id': 0, 'title': 'Custom test', 'time_limit': 100, 'memory_limit': 64}
+def getSubmitView(request, current_problem):
     context = {'problem': current_problem}
     try:
         return render(request, 'submit.html', context)
@@ -46,13 +41,7 @@ def getSubmitView(request, problem_id, contest_id=None):
         raise SuspiciousOperation()
 
 
-def postSubmitView(request, problem_id=None, contest_id=None):
-    if problem_id is not None:
-        current_problem = get_object_or_404(problem, id=problem_id)
-        if contest_id is not None and (current_problem.contest_id != contest_id or datetime.now() < current_problem.contest.start_date):
-            raise SuspiciousOperation()
-    else:
-        current_problem = {'id': 0, 'title': 'Custom test', 'time_limit': 100, 'memory_limit': 64}
+def postSubmitView(request, current_problem):
     source_code = request.POST.get("source", "")
     if source_code is None or len(source_code) > 5000:
         raise SuspiciousOperation()
@@ -63,13 +52,13 @@ def postSubmitView(request, problem_id=None, contest_id=None):
         raise SuspiciousOperation()
     current_userinfo.last_submit = datetime.now()
     current_userinfo.save()
-    new_submission = submission.objects.create(user_id=request.user.id, problem_id=problem_id, status='QU',
-                                               code=source_code, problem=current_problem)
+    new_submission = submission.objects.create(user_id=request.user.id, problem_id=current_problem.id, status='QU',
+                                               code=source_code)
     new_submission.save()
     start_judge(new_submission)
     try:
         return redirect(('%s/user/' + str(request.user.id) + '/submissions') % (
-        '/contest/' + str(contest_id) if contest_id is not None else ''))
+        '/contest/' + str(current_problem.contest_id) if current_problem.contest_id is not None else ''))
     except:
         raise SuspiciousOperation()
 
@@ -77,9 +66,15 @@ def postSubmitView(request, problem_id=None, contest_id=None):
 def submitView(request, problem_id=None, contest_id=None):
     if not request.user.is_authenticated:
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+    if problem_id is not None:
+        current_problem = get_object_or_404(problem, id=problem_id)
+        if contest_id is not None and current_problem.contest_id != contest_id:
+            raise SuspiciousOperation()
+    else:
+        current_problem = {'id': 0, 'title': 'Custom test', 'time_limit': 100, 'memory_limit': 64}
     if request.method == 'POST':
-        return postSubmitView(request, problem_id, contest_id)
-    return getSubmitView(request, problem_id, contest_id)
+        return postSubmitView(request, current_problem)
+    return getSubmitView(request, current_problem)
 
 
 def submissionView(request, page_id=1, contest_id=None, user_id=None):

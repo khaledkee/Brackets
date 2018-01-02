@@ -22,7 +22,7 @@ class problem(models.Model):
     title = models.CharField(max_length=50)
     time_limit = models.IntegerField(default=100)
     memory_limit = models.IntegerField(default=64)
-    statement = models.CharField(max_length=500)
+    statement = models.CharField(max_length=1500)
     input_section = models.CharField(max_length=500)
     output_section = models.CharField(max_length=500)
     samples = models.IntegerField(default=1)
