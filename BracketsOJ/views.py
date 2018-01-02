@@ -147,7 +147,7 @@ def sort_on_acs(user_dict):
 def scoreboardView(request, contest_id):
     current_contest = get_object_or_404(contest,id = contest_id)
     problems = problem.objects.filter(contest_id=contest_id)
-    submissions = submission.objects.filter(problem__contest_id = contest_id).order_by('submitted')
+    submissions = submission.objects.filter(problem__contest_id = contest_id,submitted__lte=current_contest.end_date,submitted__gte=current_contest.start_date).order_by('submitted')
     users_dict = {}
     for user_submission in submissions:
         if str(user_submission.user) not in users_dict:

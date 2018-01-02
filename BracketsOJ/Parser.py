@@ -1,6 +1,5 @@
-#from BracketsOJ \
-import extra_functions
-#import string
+from BracketsOJ import extra_functions
+import string
 
 class Parser:
     Special_Symbols = "~!@#$%^&*()+=/-,{}<:>?[]\|"

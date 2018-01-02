@@ -67,7 +67,7 @@
                                 {{ submission.judged|localtime }}
                             </td>
                             <td>
-                                {{ submission.user }}
+                                {{ submission.user.first_name }}
                             </td>
                             <td>
                                 {{ submission.problem }}
@@ -111,7 +111,7 @@
                 </div>
             </div>
         </div>
-        <nav class="Page navigation offset-4">
+        <nav class="Page navigation offset-2">
             {% if submissions.has_other_pages %}
                 <ul class="pagination mx-auto">
                     {% if submissions.has_previous %}
