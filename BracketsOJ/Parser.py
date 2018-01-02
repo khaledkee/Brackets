@@ -61,7 +61,8 @@ class Parser:
         self.Use_Uses = []
         self.Data_type_for_comma = 0
         self.Instructions = 0
-
+        self.Error_Line=0
+        self.Error = ""
     def Start(self):
 
         """
@@ -82,19 +83,27 @@ class Parser:
         try:
             if self.Split_to_Lines():
                 if not self.Remove_constants():
+                    self.Error_Line = -1
+                    self.Error=""" Error in data or constant"""
                     return False
                 else:
                     if not self.Build_Memory():
+                        self.Error_Line =-1
+                        """ Error in data or constant"""
                         if self.State != "":
                             return self.State
                         return False
                     else:
                         if not self.Build_code_segment():
+                            self.Error_Line = len(self.Code_segment)
+                            self.Error=""" Error build code"""
                             if self.State != "":
                                 return self.State
                             return False
                         else:
                             if not self.Start_Code():
+                                self.Error_Line = self.Registers["eip"]
+                                self.Error = """ Error in code"""
                                 if self.State != "":
                                     return self.State
                                 return False
