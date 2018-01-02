@@ -1650,7 +1650,7 @@ class Parser:
         if tmp1 is False or tmp2 is False:
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+            if (tmp1[2] == 0) and (tmp2[2] != 0):
                 tmp1[2]=tmp2[2]
             else:
                 return False
@@ -1754,7 +1754,7 @@ class Parser:
         if (tmp1 is False) or (tmp2 is False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+            if (tmp1[2] == 0) and (tmp2[2] != 0):
                 tmp1[2]=tmp2[2]
             else:
                 return False
@@ -2065,7 +2065,7 @@ class Parser:
         if (tmp1 == False) or (tmp2 == False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+            if (tmp1[2] == 0) and (tmp2[2] != 0):
                 tmp1[2]=tmp2[2]
             else:
                 return False
@@ -3215,7 +3215,7 @@ class Parser:
         if (tmp1 is False) or (tmp2 is False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
-            if (tmp1[2]==0)and(tmp2[2]!=0)and (tmp2[0] != 'imm'):
+            if (tmp1[2] == 0) and (tmp2[2] != 0):
                 tmp1[2]=tmp2[2]
             else:
                 return False
