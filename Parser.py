@@ -39,7 +39,7 @@ class Parser:
         Code = Code.replace('\t', '   ')
         Code = Code.replace('\r', '')
         self.Code_Lines = []
-        self.Code = Code
+        self.Code = Code+'\n'
         self.Max_Instructions = Max_Instructions
         self.Max_Memory = Max_Memory
         self.State = ""
@@ -61,7 +61,8 @@ class Parser:
         self.Use_Uses = []
         self.Data_type_for_comma = 0
         self.Instructions = 0
-
+        self.Error_Line=0
+        self.Error = ""
     def Start(self):
 
         """
@@ -82,23 +83,33 @@ class Parser:
         try:
             if self.Split_to_Lines():
                 if not self.Remove_constants():
+                    self.Error_Line = -1
+                    self.Error=""" Error in data or constant"""
                     return False
                 else:
                     if not self.Build_Memory():
+                        self.Error_Line =-1
+                        """ Error in data or constant"""
                         if self.State != "":
                             return self.State
                         return False
                     else:
                         if not self.Build_code_segment():
+                            self.Error_Line = len(self.Code_segment)
+                            self.Error=""" Error build code"""
                             if self.State != "":
                                 return self.State
                             return False
                         else:
                             if not self.Start_Code():
+                                self.Error_Line = self.Registers["eip"]
+                                self.Error = """ Error in code"""
                                 if self.State != "":
                                     return self.State
                                 return False
                             else:
+                                if self.State != "":
+                                    return self.State
                                 return [self.Instructions, len(self.Memory_data_segment) + len(self.Stack_segment),
                                         self.Output_File]
             else:
@@ -441,29 +452,29 @@ class Parser:
         infix = []
         i=0
         while( i <(len(Line))):
-            if (Line[i] == '(') | (Line[i] == '['):
+            if (Line[i] == '(') or (Line[i] == '['):
                 if len(stak) > 0:
-                    if (Line[i] == '[') & ((stak[len(stak) - 1] == "lengthof") | (stak[len(stak) - 1] == "dup") | (stak[len(stak) - 1] == "sizeof") | (stak[len(stak) - 1] == "type")):
+                    if (Line[i] == '[') and ((stak[len(stak) - 1] == "lengthof") or (stak[len(stak) - 1] == "dup") or (stak[len(stak) - 1] == "sizeof") or (stak[len(stak) - 1] == "type")):
                         return False
                 if len(stak) > 0:
-                    if (Line[i] == '(') & ((stak[len(stak) - 1] == "lengthof") | (stak[len(stak) - 1] == "sizeof")):
+                    if (Line[i] == '(') and ((stak[len(stak) - 1] == "lengthof") or (stak[len(stak) - 1] == "sizeof")):
                         return False
-                if (len(stak) == 0) & (Line[i] == '('):
+                if (len(stak) == 0) and (Line[i] == '('):
                     return False
                 stak.append(Line[i])
-            elif (Line[i] == ')') | (Line[i] == ']'):
+            elif (Line[i] == ')') or (Line[i] == ']'):
                 if len(stak) == 0:
                     return False
 
                 j = len(stak) - 1
                 while j >= 0:
-                    if (stak[j] == '(') & (Line[i] == ')'):
+                    if (stak[j] == '(') and (Line[i] == ')'):
                         break
-                    elif (stak[j] == '(') & (Line[i] == ']'):
+                    elif (stak[j] == '(') and (Line[i] == ']'):
                         return False
-                    elif (stak[j] == '[') & (Line[i] == ')'):
+                    elif (stak[j] == '[') and (Line[i] == ')'):
                         return False
-                    elif (stak[j] == '[') & (Line[i] == ']'):
+                    elif (stak[j] == '[') and (Line[i] == ']'):
                         break
                     expression.append(stak[j])
                     stak = stak[:-1]
@@ -484,7 +495,7 @@ class Parser:
                         expression.append(stak[j])
                         stak = stak[:-1]
                         j = j - 1
-                if (expression.__len__() > 0)&(expression!=["dup"]):
+                if (expression.__len__() > 0)and(expression!=["dup"]):
                     infix.append(expression)
                 expression = []
             elif Line[i][0].isdecimal():
@@ -511,7 +522,7 @@ class Parser:
                     expression.append(int(Line[i]))
                 else:
                     return False
-            elif (Line[i] == "lengthof") | (Line[i] == "sizeof") | (Line[i] == "type") | (Line[i] == "dup"):
+            elif (Line[i] == "lengthof") or (Line[i] == "sizeof") or (Line[i] == "type") or (Line[i] == "dup"):
                 if (Line[i] == "dup"):
                     if stak.__len__()>0:
                         j = stak.__len__() - 1
@@ -523,20 +534,20 @@ class Parser:
                     L = []
                     i = 1 + i
                     while (i < len(Line)):
-                        if (Line[i] == '(') | (Line[i] == '['):
+                        if (Line[i] == '(') or (Line[i] == '['):
                             S.append(Line[i])
-                        elif (Line[i] == ')') | (Line[i] == ']'):
+                        elif (Line[i] == ')') or (Line[i] == ']'):
                             if len(S) == 0:
                                 return False
                             j = len(S) - 1
                             while j >= 0:
-                                if (S[j] == '(') & (Line[i] == ')'):
+                                if (S[j] == '(') and (Line[i] == ')'):
                                     break
-                                elif (S[j] == '(') & (Line[i] == ']'):
+                                elif (S[j] == '(') and (Line[i] == ']'):
                                     return False
-                                elif (S[j] == '[') & (Line[i] == ')'):
+                                elif (S[j] == '[') and (Line[i] == ')'):
                                     return False
-                                elif (S[j] == '[') & (Line[i] == ']'):
+                                elif (S[j] == '[') and (Line[i] == ']'):
                                     break
                                 S = S[:-1]
                                 j = j - 1
@@ -601,13 +612,13 @@ class Parser:
 
         j = len(stak) - 1
         while j >= 0:
-            if (stak[j] == '(') | (stak[j] == '['):
+            if (stak[j] == '(') or (stak[j] == '['):
                 return False
             expression.append(stak[j])
             stak = stak[:-1]
             j = j - 1
 
-        if (expression.__len__() > 0)&(expression!=["dup"]):
+        if (expression.__len__() > 0)and(expression!=["dup"]):
             infix.append(expression)
         return infix
 
@@ -868,6 +879,8 @@ class Parser:
 
         if self.Build_code_segment_Lables() is False:
             return False
+
+
         i = 0
         if (self.Code_Lines[0].__len__() == 1) and (self.Code_Lines[0][0] == ".code"):
             self.Code_Lines.remove(self.Code_Lines[0])
@@ -1290,17 +1303,18 @@ class Parser:
                                     Decimal value for register
         """
         tmp='e'+string[0]+'x'
+
         if string[1]=='l':
             return (self.Registers[tmp]&(pow(2,8)-1))
         elif string[1]=='h':
-            return (self.Registers[tmp]&((pow(2,8)-1)*pow(2,8)))
+            a=(pow(2,8)-1)
+            a=a.__lshift__(8)
+            a=(self.Registers[tmp]&a)
+            a=a.__rshift__(8)
+            return a
         else:
-            return (self.Registers[tmp] & (pow(2, 16) - 1))
-
-
-
-
-############################ Not Finish ###########################################
+            a=(self.Registers[tmp] & (pow(2, 16) - 1))
+            return a
 
     def Save_value_in_reg_X(self, string,val):
 
@@ -2049,7 +2063,6 @@ class Parser:
 
         tmp1 = self.Check_code_operand(infix[0])
         tmp2 = self.Check_code_operand(infix[1])
-
         if (tmp1 == False) or (tmp2 == False):
             return False
         if (tmp1[0] == 'imm') or (tmp1[2] == 0) or ((tmp1[0] == 'imm') and (tmp2[0] == 'imm')):
@@ -2076,7 +2089,8 @@ class Parser:
         if b < 0:
             return False
 
-        b = pow(2, (tmp1[2] * 8)) - b
+        if b!=0 :
+            b = pow(2, (tmp1[2] * 8)) - b
 
         v = (bool(((a & (pow(2, 4) - 1)) + (b & (pow(2, 4) - 1))) & pow(2, 4)))
 
@@ -2089,7 +2103,6 @@ class Parser:
             ((a & (pow(2, (tmp1[2] * 8) - 1) - 1)) + (b & (pow(2, (tmp1[2] * 8) - 1) - 1))) & pow(2, (tmp1[2] * 8) - 1))
 
         a = a + b
-
         if a >= pow(2, tmp1[2] * 8):
             a = a & (pow(2, tmp1[2] * 8) - 1)
             self.Flags["cf"] = 0
@@ -2770,17 +2783,24 @@ class Parser:
             else:
                 return False
         elif String == "readdec":
+
             num = ""
+
             while (self.Input_File_index < len(self.Input_File)):
                 if self.Input_File[self.Input_File_index] == "\n":
                     self.Input_File_index += 1
                     break
                 num += self.Input_File[self.Input_File_index]
                 self.Input_File_index += 1
-            if (num.isdecimal() == True) | ((num[1:].isdecimal() == True) & ((num[0] == '-') | num[0] == '+')):
+
+            a=num[1:]
+            if ((num.isdecimal() == True) or ((a.isdecimal() == True) and ((num[0] == '-') or num[0] == '+'))):
                 self.Registers["eax"] = int(num)
             else:
+
                 return False
+
+
         elif String == "readchar":
             if (self.Input_File_index < len(self.Input_File)):
                 self.Save_value_in_reg_X("al", ord(self.Input_File[self.Input_File_index]))
@@ -2831,6 +2851,7 @@ class Parser:
                     a = a & (pow(2, 2 * 8) - 1)
                 self.Save_value_in_reg_X("ax",a)
 
+                a = a & (pow(2, 8) - 1)
                 if bool(self.Get_value_from_reg_X("ah")):
                     self.Flags["cf"] = 1
                     self.Flags["of"] = 1
@@ -2854,10 +2875,7 @@ class Parser:
                 else:
                     self.Flags["pf"] = 1
 
-                if a == 0:
-                    self.Flags["zf"] = 1
-                else:
-                    self.Flags["zf"] = 0
+                self.Flags["zf"] = 0
             elif tmp1[2] == 2:
                 a = a * self.Get_value_from_reg_X("ax")
                 b=a
@@ -2893,10 +2911,8 @@ class Parser:
                 else:
                     self.Flags["pf"] = 1
 
-                if a == 0:
-                    self.Flags["zf"] = 1
-                else:
-                    self.Flags["zf"] = 0
+
+                self.Flags["zf"] = 0
             elif tmp1[2] == 4:
                 a = a * self.Registers["eax"]
                 b = a
@@ -2931,10 +2947,7 @@ class Parser:
                 else:
                     self.Flags["pf"] = 1
 
-                if a == 0:
-                    self.Flags["zf"] = 1
-                else:
-                    self.Flags["zf"] = 0
+                self.Flags["zf"] = 0
         elif String == 'imul':
             a = 0
             if (tmp1[0] != 'add'):
@@ -2949,6 +2962,7 @@ class Parser:
                     a = a & (pow(2, 2 * 8) - 1)
                 self.Save_value_in_reg_X("ax", a)
 
+                a=a&(pow(2,  8)-1)
                 if bool(a & pow(2, (8) - 1)):
                     self.Flags["sf"] = 1
                 else:
@@ -2975,10 +2989,8 @@ class Parser:
                 else:
                     self.Flags["pf"] = 1
 
-                if a == 0:
-                    self.Flags["zf"] = 1
-                else:
-                    self.Flags["zf"] = 0
+
+                self.Flags["zf"] = 0
             elif tmp1[2] == 2:
 
                 a = a * self.Get_value_from_reg_X("ax")
@@ -3018,10 +3030,8 @@ class Parser:
                 else:
                     self.Flags["pf"] = 1
 
-                if a == 0:
-                    self.Flags["zf"] = 1
-                else:
-                    self.Flags["zf"] = 0
+
+                self.Flags["zf"] = 0
             elif tmp1[2] == 4:
                 a = a * self.Registers["eax"]
                 b = a
@@ -3059,10 +3069,8 @@ class Parser:
                 else:
                     self.Flags["pf"] = 1
 
-                if a == 0:
-                    self.Flags["zf"] = 1
-                else:
-                    self.Flags["zf"] = 0
+
+                self.Flags["zf"] = 0
 
         return True
 
@@ -3101,10 +3109,12 @@ class Parser:
                 return False
             self.Save_value_in_reg_X("ah", b)
 
+
             if bool(a & pow(2, (8) - 1)):
                 self.Flags["sf"] = 1
             else:
                 self.Flags["sf"] = 0
+            """"
             v = a
             one = 0
             for i in range(0, 8):
@@ -3114,12 +3124,15 @@ class Parser:
             if bool(one & 1):
                 self.Flags["pf"] = 0
             else:
-                self.Flags["pf"] = 1
-
-            if a == 0:
+            
+                        if a == 0:
                 self.Flags["zf"] = 1
             else:
-                self.Flags["zf"] = 0
+                """
+            self.Flags["pf"] = 1
+
+
+            self.Flags["zf"] = 1
         elif tmp1[2] == 2:
             a, b = divmod((self.Get_value_from_reg_X("dx").__lshift__(16) | self.Get_value_from_reg_X("ax")), a)
             if a >= pow(2, 2 * 8):
@@ -3130,10 +3143,12 @@ class Parser:
                 return False
             self.Save_value_in_reg_X("dx", b)
 
+
             if bool(a & pow(2, (2 * 8) - 1)):
                 self.Flags["sf"] = 1
             else:
                 self.Flags["sf"] = 0
+                """
             v = a
             one = 0
             for i in range(0, 8):
@@ -3143,12 +3158,14 @@ class Parser:
             if bool(one & 1):
                 self.Flags["pf"] = 0
             else:
-                self.Flags["pf"] = 1
+                
 
             if a == 0:
                 self.Flags["zf"] = 1
             else:
-                self.Flags["zf"] = 0
+            """
+            self.Flags["pf"] = 1
+            self.Flags["zf"] = 1
         elif tmp1[2] == 4:
             a, b = divmod((self.Registers["edx"].__lshift__(32) | self.Registers["eax"]), a)
             if a >= pow(2, 4 * 8):
@@ -3163,6 +3180,7 @@ class Parser:
                 self.Flags["sf"] = 1
             else:
                 self.Flags["sf"] = 0
+                """
             v = a
             one = 0
             for i in range(0, 8):
@@ -3178,6 +3196,9 @@ class Parser:
                 self.Flags["zf"] = 1
             else:
                 self.Flags["zf"] = 0
+                """
+            self.Flags["pf"] = 1
+            self.Flags["zf"] = 1
         return True
 
     def Test(self, String, infix):
