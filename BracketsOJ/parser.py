@@ -2088,8 +2088,7 @@ class Parser:
         if b < 0:
             return False
 
-        if b!=0 :
-            b = pow(2, (tmp1[2] * 8)) - b
+        b = pow(2, (tmp1[2] * 8)) - b
 
         v = (bool(((a & (pow(2, 4) - 1)) + (b & (pow(2, 4) - 1))) & pow(2, 4)))
 
